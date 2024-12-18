@@ -52,7 +52,9 @@ class VeilleRegionaleApp:
     def start_process(self):
         url = self.url_var.get()
         dest_folder = self.dest_folder_var.get()
-        month = self.month_var.get()
+        selected_month_text = self.month_var.get()
+        selected_month_value = self.months[selected_month_text]
+        month = selected_month_value
 
         if not url or not dest_folder or not month:
             messagebox.showerror("Erreur", "Veuillez remplir tous les champs !")
