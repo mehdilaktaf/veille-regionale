@@ -6,9 +6,28 @@ from selenium.webdriver.support import expected_conditions as EC
 import os, time, requests
 from PyPDF2 import PdfMerger
 
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
 def download_raa_pdfs(base_url, headers, target_month, download_dir):
     # Initialisation du navigateur
-    driver = webdriver.Chrome("C:\\Users\\camel\\Documents\\python_projects\\veille-regionale\\chromedriver-win64\\chromedriver")  # Remplacez par votre driver
+    # driver = webdriver.Chrome("C:\\Users\\camel\\Documents\\python_projects\\veille-regionale\\chromedriver-win64\\chromedriver")  # Remplacez par votre driver
+    # Configure the WebDriver
+    # service = Service(ChromeDriverManager().install())
+    
+    # Obtenir le chemin complet vers chromedriver 
+    chromedriver_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'chromedriver-win64', 'chromedriver')
+    # Configurer le driver 
+    service = Service(executable_path=chromedriver_path)
+
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--headless")  # Optional: Run without GUI
+    chrome_options.add_argument("--disable-gpu")  # Optional: Disable GPU acceleration (for some environments)
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)    
     driver.get(base_url)
 
     # Fermer le pop-up de cookies

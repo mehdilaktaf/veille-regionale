@@ -21,6 +21,12 @@ class VeilleRegionaleApp:
         self.url_var = tk.StringVar()
         self.dest_folder_var = tk.StringVar()
         self.month_var = tk.StringVar()
+        
+        # Dictionnaire des mois 
+        self.months = { "Janvier": "01", "Février": "02", "Mars": "03", 
+                       "Avril": "04", "Mai": "05", "Juin": "06",
+                       "Juillet": "07", "Août": "08", "Septembre": "09",
+                       "Octobre": "10", "Novembre": "11", "Décembre": "12" }
 
         # Widgets
         tk.Label(root, text="Lien du site régional :").pack(pady=5)
@@ -32,8 +38,8 @@ class VeilleRegionaleApp:
         self.dest_entry.pack(pady=5)
         tk.Button(root, text="Parcourir", command=self.browse_folder).pack(pady=5)
 
-        tk.Label(root, text="Choisir un mois :").pack(pady=5)
-        self.month_menu = tk.OptionMenu(root, self.month_var, *["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"])
+        tk.Label(root, text="Choisir un mois :").pack(pady=5) 
+        self.month_menu = tk.OptionMenu(root, self.month_var, *self.months.keys()) 
         self.month_menu.pack(pady=5)
 
         tk.Button(root, text="Fusionner", command=self.start_process).pack(pady=20)
@@ -63,7 +69,9 @@ class VeilleRegionaleApp:
         # driver = webdriver.Chrome(ChromeDriverManager().install())
         # Configure the WebDriver
         service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service)
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        driver = webdriver.Chrome(service=service, options=options)
         driver.get(url)
 
         # Liste des fichiers PDF
@@ -103,7 +111,7 @@ class VeilleRegionaleApp:
             merger.append(pdf_path)
 
         # Sauvegarder le fichier fusionné
-        merged_pdf_path = os.path.join(dest_folder, "RAA_fusionne.pdf")
+        merged_pdf_path = os.path.join(dest_folder, "RAA_fusionne_"+str(month)+".pdf")
         merger.write(merged_pdf_path)
         merger.close()
 
