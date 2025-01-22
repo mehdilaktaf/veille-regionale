@@ -29,6 +29,7 @@ class VeilleRegionaleApp:
                        "Avril": "04", "Mai": "05", "Juin": "06",
                        "Juillet": "07", "Août": "08", "Septembre": "09",
                        "Octobre": "10", "Novembre": "11", "Décembre": "12" }
+        self.month_names = { "01": "janvier", "02": "février", "03": "mars", "04": "avril", "05": "mai", "06": "juin", "07": "juillet", "08": "août", "09": "septembre", "10": "octobre", "11": "novembre", "12": "décembre" }
 
         # Widgets
         tk.Label(root, text="Lien du site régional :").pack(pady=5)
@@ -160,7 +161,6 @@ class VeilleRegionaleApp:
         driver.get(url)
         pdf_links = []
 
-        month_names = { "01": "janvier", "02": "février", "03": "mars", "04": "avril", "05": "mai", "06": "juin", "07": "juillet", "08": "août", "09": "septembre", "10": "octobre", "11": "novembre", "12": "décembre" }
         try:
             # Fermer le pop-up de cookies
             cookie_deny_button = WebDriverWait(driver, 10).until(
@@ -186,8 +186,8 @@ class VeilleRegionaleApp:
             for download_link in download_links:
                 url, name = (download_link.get_attribute("href"), download_link.get_attribute("href").split("/")[-1])
                 print(f"url: {url}, name: {name}")
-                if month_names[month] in name:
-                    print("month_names[month]", month_names[month])
+                if self.month_names[month] in name:
+                    print("self.month_names[month]", self.month_names[month])
                     print(download_link.get_attribute("href"))
                     pdf_links.append((url, name))
         except Exception as e:
@@ -208,10 +208,13 @@ class VeilleRegionaleApp:
             dest_folder (str): Dossier où sauvegarder les PDFs.
             month (str): Mois cible (format : "MM").
         """
+        departement = ""
         if url.startswith("https://www.vendee.gouv.fr"):
             pdf_links = self.extraction_vendee(url, month)
+            departement = "vendee"
         elif url.startswith("https://www.maine-et-loire.gouv.fr/"):
             pdf_links = self.extraction_maine_et_loire(url, month)
+            departement = "maine_et_loire"
         print(f"Liens trouvés pour le mois {month} : {pdf_links}")
 
         if not pdf_links:
@@ -233,7 +236,7 @@ class VeilleRegionaleApp:
             merger.append(pdf_path)
 
         # Sauvegarder le fichier fusionné
-        merged_pdf_path = os.path.join(dest_folder, f"RAA_fusionne_{month}.pdf")
+        merged_pdf_path = os.path.join(dest_folder, f"RAA_fusionne_{self.month_names[month]}_{departement}.pdf")
         merger.write(merged_pdf_path)
         merger.close()
 
