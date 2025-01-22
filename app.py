@@ -39,7 +39,7 @@ class VeilleRegionaleApp:
         tk.Label(root, text="Dossier de destination :").pack(pady=5)
         self.dest_entry = tk.Entry(root, textvariable=self.dest_folder_var, width=50)
         self.dest_entry.pack(pady=5)
-        # self.dest_entry.insert(0, "C:/Users/camel/Documents/recueils-admins")
+        self.dest_entry.insert(0, "C:/Users/camel/Documents/recueils-admins")
         tk.Button(root, text="Parcourir", command=self.browse_folder).pack(pady=5)
 
         tk.Label(root, text="Choisir un mois :").pack(pady=5) 
@@ -160,6 +160,7 @@ class VeilleRegionaleApp:
         driver.get(url)
         pdf_links = []
 
+        month_names = { "01": "janvier", "02": "février", "03": "mars", "04": "avril", "05": "mai", "06": "juin", "07": "juillet", "08": "août", "09": "septembre", "10": "octobre", "11": "novembre", "12": "décembre" }
         try:
             # Fermer le pop-up de cookies
             cookie_deny_button = WebDriverWait(driver, 10).until(
@@ -183,8 +184,12 @@ class VeilleRegionaleApp:
             download_links = download_div.find_elements(By.CSS_SELECTOR, "a.fr-link.fr-link--download")
             print("download_links", download_links)
             for download_link in download_links:
-                print(download_link.get_attribute("href"))
-                pdf_links.append((download_link.get_attribute("href"), download_link.get_attribute("href").split("/")[-1]))
+                url, name = (download_link.get_attribute("href"), download_link.get_attribute("href").split("/")[-1])
+                print(f"url: {url}, name: {name}")
+                if month_names[month] in name:
+                    print("month_names[month]", month_names[month])
+                    print(download_link.get_attribute("href"))
+                    pdf_links.append((url, name))
         except Exception as e:
             print(f"Erreur lors de la récupération du lien: {e}")
 
