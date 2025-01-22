@@ -1,7 +1,10 @@
 # Ignore virtual environment
-venv/
+.venv
 
 # Other common ignores
 __pycache__/
 *.py[cod]
 *.log
+build/
+dist/
+*.spec

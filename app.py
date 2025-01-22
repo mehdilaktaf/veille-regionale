@@ -39,7 +39,7 @@ class VeilleRegionaleApp:
         tk.Label(root, text="Dossier de destination :").pack(pady=5)
         self.dest_entry = tk.Entry(root, textvariable=self.dest_folder_var, width=50)
         self.dest_entry.pack(pady=5)
-        self.dest_entry.insert(0, "C:/Users/camel/Documents/recueils-admins")
+        # self.dest_entry.insert(0, "C:/Users/camel/Documents/recueils-admins")
         tk.Button(root, text="Parcourir", command=self.browse_folder).pack(pady=5)
 
         tk.Label(root, text="Choisir un mois :").pack(pady=5) 
@@ -83,6 +83,7 @@ class VeilleRegionaleApp:
         """
         service = Service(ChromeDriverManager().install())
         options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
@@ -150,6 +151,7 @@ class VeilleRegionaleApp:
         """
         service = Service(ChromeDriverManager().install())
         options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
