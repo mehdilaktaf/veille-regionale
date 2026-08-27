@@ -11,14 +11,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def download_raa_pdfs(base_url, headers, target_month, download_dir):
     # Initialisation du navigateur
-    # driver = webdriver.Chrome("C:\\Users\\camel\\Documents\\python_projects\\veille-regionale\\chromedriver-win64\\chromedriver")  # Remplacez par votre driver
     # Configure the WebDriver
-    # service = Service(ChromeDriverManager().install())
-    
-    # Obtenir le chemin complet vers chromedriver 
-    chromedriver_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'chromedriver-win64', 'chromedriver')
-    # Configurer le driver 
-    service = Service(executable_path=chromedriver_path)
+    service = Service(ChromeDriverManager().install())
 
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--no-sandbox")

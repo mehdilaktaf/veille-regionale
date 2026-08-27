@@ -1,8 +1,9 @@
 import pdfplumber
 import pandas as pd
+import sys
 
 # Path to the uploaded PDF file
-pdf_path = "C:/Users/camel/Documents/recueils-admins/RAA_fusionne_janvier_2025_Loire-Atlantique.pdf"
+pdf_path = sys.argv[1] if len(sys.argv) > 1 else "C:/Users/camel/Documents/recueils-admins/RAA_fusionne_janvier_2025_Loire-Atlantique.pdf"
 
 # Reading the PDF and extracting bold text
 pdf_text = []
