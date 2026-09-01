@@ -18,6 +18,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 | Marne | marne.gouv.fr | 2025-2026 : **1 select par mois** (pas de global ; 1er select en tête de page à double tiret) → POST de l'option (pattern Vendée) ; 2013-2024 : cartes (groupes « Années A à B ») → page annuelle tableau → pages docs | 2025+ : span CMS du panneau POST (noms sans date) ; 2013-2024 : span CMS page doc ; libellé « du … » en pré-filtre/contrôle | **2** : menu (2025-2026) / pages docs (2013-2024) | 2013 (carte groupe) | ✗ non testé | — |
 | Ardennes | ardennes.gouv.fr | carte « l'année YYYY » (courante) ou « années antérieures » → cartes années (2025→2017 + commune « 2015 & 2016 ») → page annuelle de liens directs (≈ 288/an, sans pagination) | span CMS (100 %) ; nom de fichier « RAA 8-2026-144 du 31 aout 2026.pdf » en contrôle | **2** : carte directe (année en cours) / carte « années antérieures » ; **page commune 2015 & 2016** (mois ≠ année, à gérer au backfill) | 2015 & 2016 (carte commune) | ✗ non testé | ✓ test 3/19 OK, full en attente |
 | Haute-Marne | haute-marne.gouv.fr | cartes « Année YYYY » (2026→2017, pas d'archives visible) → page annuelle de liens directs (sans pagination) ; 2026 : `a.fr-link` plain (URL absolue), années anciennes : `a.fr-link--download` + span | 2026 : **nom de fichier/libellé** (coquilles tolérées : année 2 chiffres « 05-02-26 », tiret final « 2026-.pdf ») ; anciennes : span CMS | **2** : 2026 sans span CMS (date dans le nom) / anciennes avec span CMS | 2017 (carte, à confirmer) | ✗ non testé | — |
+| Meurthe-et-Moselle | meurthe-et-moselle.gouv.fr | cartes « Recueils des actes administratifs année YYYY » (2026→2017) → page annuelle : select « Liste-liste-docs » (110 options 2026) → POST → panneau (pattern Vendée) | span CMS du panneau POST (100 %) ; libellé « Numéro N du D mois YYYY » (ancré « du ») en pré-filtre/contrôle | 1 (2017 à confirmer) | 2017 (carte, à confirmer) | ✗ non testé | — |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
 | Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
@@ -85,6 +86,12 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   tolérées (« RAA n° 19 du 05-02-26 » année sur 2 chiffres,
   « RAA n° 21 du 02-03-2026-.pdf » tiret final) → `du_day_month(name)` essayé
   avant `relaxed_day_month` dans la base `AnnualPageRaaClient`.
+- **Meurthe-et-Moselle 2026-02** ✓ : 3/7 docs (n°15-17), ≈13 req (1 GET
+  section + 1 GET annuelle + 7 POST + 3 dl). Pattern Vendée : select
+  « Liste-liste-docs » (1 option par doc, libellés « Numéro N du D mois
+  YYYY » ancrés « du » → pré-filtre fiable, 0 option sans date sur 2026) ;
+  le POST génère le panneau (span CMS faisant foi), noms de fichier propres
+  (« Numéro 15 du 18 février 2026.pdf »).
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.

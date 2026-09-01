@@ -12,7 +12,7 @@ déjà testés en 2026-08 avant la bascule.
 - [x] Aube (10) — 2026-02 ✓ 3/26 (cartes « RAA YYYY » → cartes docs paginées, liens PDF directs, title CMS)
 - [x] Marne (51) — 2026-02 ✓ 3/20 (flow menu 1 select/mois + POST ; flow pages docs 2013-2024)
 - [x] Haute-Marne (52) — 2026-02 ✓ 3/10 (page annuelle de liens directs, 2026 sans span CMS → date du nom de fichier)
-- [ ] Meurthe-et-Moselle (54)
+- [x] Meurthe-et-Moselle (54) — 2026-02 ✓ 3/7 (select « Liste-liste-docs » + POST, pattern Vendée, libellés « Numéro N du D mois YYYY »)
 - [ ] Meuse (55)
 - [ ] Bas-Rhin (67)
 - [ ] Haut-Rhin (68)
