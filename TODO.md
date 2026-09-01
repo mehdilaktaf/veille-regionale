@@ -15,7 +15,7 @@ déjà testés en 2026-08 avant la bascule.
 - [x] Meurthe-et-Moselle (54) — 2026-02 ✓ 3/7 (select « Liste-liste-docs » + POST, pattern Vendée, libellés « Numéro N du D mois YYYY »)
 - [x] Meuse (55) — 2026-02 ✓ 3/11 (select d'années sur la section → page annuelle de liens directs, span CMS 100 %)
 - [x] Bas-Rhin (67) — 2026-02 ✓ 3/8 (cartes « RAA ANNEE YYYY » sans accent → page annuelle : 1 select/mois « Liste-liste-docs » + POST, pattern Marne)
-- [ ] Haut-Rhin (68)
+- [x] Haut-Rhin (68) — 2026-02 ✓ 3/10 (cartes années texte exact « YYYY » (2026→1994) → cartes docs paginées, liens PDF directs, title CMS)
 - [ ] Territoire de Belfort (90)
 Règle WAF : 1 dépt à la fois, espacement, arrêt total si blocage (pas de
 polling), ~4-5 dépts par session.
@@ -47,7 +47,7 @@ polling), ~4-5 dépts par session.
       - Loire-Atlantique 2017-08 ✓ · Guadeloupe 2017-08 ✓ · Guyane 2017-08 ✓
 
 ## Plus vieilles années en ligne connues
-- M49 : **2005** · Vendée : **1999** · Moselle : **2016** · Sarthe : **2018**
+- M49 : **2005** · Vendée : **1999** · **Haut-Rhin : 1994** (cartes) · Moselle : **2016** · Sarthe : **2018**
 - GL/GY/LA/53/Martinique : 2017 OK (profondeur à explorer)
 - Réunion/Mayotte : à confirmer
 
