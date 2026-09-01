@@ -493,12 +493,14 @@ class AnnualPageRaaClient(RaaHttpClient):
             if not href:
                 continue
             name = unquote(href.split("/")[-1])
+            # Nom ancré sur « du » d'abord (normalise les tirets bas, ex.
+            # « RAA n°52 Bis du 15_05_2026.pdf »), parsing tolérant en repli.
             documents.append(
                 (
                     urljoin(self.base_url, href),
                     name,
                     link_day_month(link),
-                    relaxed_day_month(name),
+                    du_day_month(name) or relaxed_day_month(name),
                 )
             )
         return documents

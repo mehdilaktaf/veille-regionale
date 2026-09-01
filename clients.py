@@ -9,6 +9,7 @@ from aisne_client import AisneRaaClient
 from ardennes_client import ArdennesRaaClient
 from aube_client import AubeRaaClient
 from marne_client import MarneRaaClient
+from haute_marne_client import HauteMarneRaaClient
 from vendee_client import VendeeRaaClient
 from maine_et_loire_client import MaineEtLoireRaaClient
 from sarthe_client import SartheRaaClient
@@ -27,6 +28,7 @@ DEPARTMENT_URLS = {
     "Ardennes": "https://www.ardennes.gouv.fr/Publications/Recueil-des-actes-administratifs",
     "Aube": "https://www.aube.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA2",
     "Marne": "https://www.marne.gouv.fr/Publications/Publications-administratives-et-legales/RAA-Recueils-des-actes-administratifs/RAA-Recueils-des-actes-administratifs-de-la-prefecture-de-la-Marne",
+    "Haute-Marne": "https://www.haute-marne.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA",
     "Maine-et-Loire": "https://www.maine-et-loire.gouv.fr/Publications/Recueil-des-Actes-Administratifs",
     "Vendée": "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueils-des-Actes-Administratifs-{year}",
     "Loire-Atlantique": "https://www.loire-atlantique.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA-en-Loire-Atlantique/{year}/",
@@ -60,6 +62,8 @@ def build_client(department, year):
         return AubeRaaClient(url, year)
     if department == "Marne":
         return MarneRaaClient(url, year)
+    if department == "Haute-Marne":
+        return HauteMarneRaaClient(url, year)
     if department == "Vendée":
         return VendeeRaaClient(url, year)
     if department == "Maine-et-Loire":
