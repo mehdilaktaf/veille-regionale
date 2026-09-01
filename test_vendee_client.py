@@ -1,0 +1,78 @@
+import unittest
+
+from vendee_client import label_month, parse_month
+
+
+class ParseMonthTest(unittest.TestCase):
+    def test_date_complete(self):
+        self.assertEqual(parse_month("29/11/2024"), "11")
+
+    def test_annee_trois_chiffres(self):
+        self.assertEqual(parse_month("20/08/026"), "08")
+
+    def test_separateurs_doublés(self):
+        self.assertEqual(parse_month("19//06/2026"), "06")
+
+    def test_sans_annee(self):
+        self.assertEqual(parse_month("17/08"), "08")
+
+    def test_date_francaise(self):
+        self.assertEqual(parse_month("4 novembre 2024"), "11")
+        self.assertEqual(parse_month("5 janvier 2024"), "01")
+
+    def test_mois_invalide(self):
+        self.assertIsNone(parse_month("20/13/2026"))
+
+    def test_jour_invalide(self):
+        self.assertIsNone(parse_month("85-2026"))
+
+    def test_detail_cms(self):
+        self.assertEqual(parse_month("PDF - 19,38 Mb - 29/11/2024"), "11")
+
+    def test_sans_date(self):
+        self.assertIsNone(parse_month("N°85-2026-131"))
+
+
+class LabelMonthTest(unittest.TestCase):
+    def test_annee_trois_chiffres(self):
+        # doc 168 (2026), faute réelle du site
+        label = "Recueil des actes administratifs nominatif 2026-168 (publié le 20/08/026)."
+        value = "Recueil-des-actes-administratifs-nominatif-2026-168-publie-le-20-08-026"
+        self.assertEqual(label_month(label, value), "08")
+
+    def test_separateurs_doublés(self):
+        # doc 118 (2026), faute réelle du site
+        label = "Recueil des actes administratifs 2026-118 (publié le 19//06/2026)."
+        value = "Recueil-des-actes-administratifs-2026-118-publie-le-19-06-2026"
+        self.assertEqual(label_month(label, value), "06")
+
+    def test_sans_le(self):
+        # doc 167 (2026)
+        label = "Recueil des actes administratifs spécial 2026 -167 (publié 17/08/2026)"
+        value = "Recueil-des-actes-administratifs-special-2026-167-publie-17-08-2026"
+        self.assertEqual(label_month(label, value), "08")
+
+    def test_date_francaise(self):
+        # doc 193 (2024)
+        label = "Recueil des actes administratifs spécial 2024-193 (publié le 04 novembre 2024)"
+        value = "Recueil-des-actes-administratifs-special-2024-193-publie-le-04-novembre-2024"
+        self.assertEqual(label_month(label, value), "11")
+
+    def test_sans_date_nulle_part(self):
+        # doc 131 (2026), aucune date dans le libellé ni la valeur
+        label = "RECUEIL DES ACTES ADMINISTRATIFS SPÉCIAL N°85-2026-131"
+        value = "RECUEIL-DES-ACTES-ADMINISTRATIFS-SPECIAL-N-85-2026-131"
+        self.assertIsNone(label_month(label, value))
+
+    def test_pas_de_parsing_non_ancre(self):
+        # « 2026-118 » seul ne doit pas être lu comme une date du 26/11
+        self.assertIsNone(label_month("Recueil des actes administratifs 2026-118", ""))
+
+    def test_slug_en_recul(self):
+        label = "Recueil des actes administratifs 2026-119"
+        value = "Recueil-des-actes-administratifs-2026-119-publie-le-03-09-2026"
+        self.assertEqual(label_month(label, value), "09")
+
+
+if __name__ == "__main__":
+    unittest.main()

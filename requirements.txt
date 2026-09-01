@@ -1,10 +1,9 @@
-selenium==4.12.0  # Pour automatiser la navigation web
 PyPDF2==3.0.1     # Pour fusionner et manipuler des fichiers PDF
 requests==2.31.0  # Pour télécharger des fichiers PDF depuis des URLs
-pillow==10.0.0    # Pour gérer d'éventuelles images dans les PDF
-pyinstaller==5.13.0  # Pour convertir le script en application exécutable
-# WebDriver-Manager for managing WebDriver binaries
-webdriver-manager>=4.0.0
+beautifulsoup4  # Pour parser le HTML des sites de RAA (clients *_client.py)
+unidecode  # Pour retirer les accents (app.py)
+pillow>=11.3.0    # Pour gérer d'éventuelles images dans les PDF (>=11.3 requis pour Python 3.14)
+pyinstaller>=6.15.0  # Pour convertir le script en application exécutable (>=6.15 requis pour Python 3.14)
 # Required for the Tkinter GUI
 customtkinter==5.1.3
 pdfplumber # For text extraction in analyse.py

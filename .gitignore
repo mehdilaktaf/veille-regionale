@@ -1,6 +1,9 @@
 # Ignore virtual environment
 .venv
 
+# Fichiers système macOS
+.DS_Store
+
 # Other common ignores
 __pycache__/
 *.py[cod]
@@ -8,3 +11,4 @@ __pycache__/
 build/
 dist/
 *.spec
+raa_pdfs/
