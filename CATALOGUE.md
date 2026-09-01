@@ -15,6 +15,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 |---|---|---|---|---|---|---|---|
 | Aisne | aisne.gouv.fr | cartes « RAA Année YYYY » (2026→2010) → cartes docs paginées par 10 (`(offset)/N`, ~17 pages) → page doc (1 lien + span) | span CMS (noms de fichier sans date) | 1 (à confirmer sur 2010-2019) | 2010 (cartes) | ✗ non testé | ✓ test 3/21 OK, full en attente |
 | Aube | aube.gouv.fr | cartes « RAA YYYY » (2024→2026, pas de carte archives) → cartes docs paginées par 10, **liens directs vers le PDF** (pas de page doc) | attribut `title` de la carte (CMS, pattern LA) ; texte « RAA n°207 du 31 août 2026 » en contrôle | 1 (2024 même flow, à confirmer) | 2024 (seule bande visible) | ✗ non testé | — |
+| Marne | marne.gouv.fr | 2025-2026 : **1 select par mois** (pas de global ; 1er select en tête de page à double tiret) → POST de l'option (pattern Vendée) ; 2013-2024 : cartes (groupes « Années A à B ») → page annuelle tableau → pages docs | 2025+ : span CMS du panneau POST (noms sans date) ; 2013-2024 : span CMS page doc ; libellé « du … » en pré-filtre/contrôle | **2** : menu (2025-2026) / pages docs (2013-2024) | 2013 (carte groupe) | ✗ non testé | — |
 | Ardennes | ardennes.gouv.fr | carte « l'année YYYY » (courante) ou « années antérieures » → cartes années (2025→2017 + commune « 2015 & 2016 ») → page annuelle de liens directs (≈ 288/an, sans pagination) | span CMS (100 %) ; nom de fichier « RAA 8-2026-144 du 31 aout 2026.pdf » en contrôle | **2** : carte directe (année en cours) / carte « années antérieures » ; **page commune 2015 & 2016** (mois ≠ année, à gérer au backfill) | 2015 & 2016 (carte commune) | ✗ non testé | ✓ test 3/19 OK, full en attente |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
@@ -72,6 +73,11 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 - **Aube 2026-02** ✓ : 3/26 docs (n°47-49), ~25 req. Coquilles CMS dans les
   noms (« RAA  n°47 » double espace, « RAAn°049 » sans espace) — sans impact
   (title CMS fait foi).
+- **Marne 2026-02** ✓ : 3/20 docs (n°038-040), ~25 req (1 GET section +
+  1 GET annuelle + 20 POST + 3 dl). Bug initial (0 doc) : le select « global »
+  supposé n'existe pas — un select **par mois** (8 selects sur 2026, le
+  premier en tête de page à double tiret) ; le client prend l'union des
+  options de tous les selects, champ POST = nom du dernier select.
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.

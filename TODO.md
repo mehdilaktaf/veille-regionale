@@ -10,7 +10,7 @@ déjà testés en 2026-08 avant la bascule.
 - [x] Aisne (02) — 2026-08 ✓ 3/21 (cartes années → cartes docs paginées → page doc, span CMS)
 - [x] Ardennes (08) — 2026-08 ✓ 3/19 (page annuelle de liens directs, span CMS 100 %)
 - [x] Aube (10) — 2026-02 ✓ 3/26 (cartes « RAA YYYY » → cartes docs paginées, liens PDF directs, title CMS)
-- [ ] Marne (51)
+- [x] Marne (51) — 2026-02 ✓ 3/20 (flow menu 1 select/mois + POST ; flow pages docs 2013-2024)
 - [ ] Haute-Marne (52)
 - [ ] Meurthe-et-Moselle (54)
 - [ ] Meuse (55)
