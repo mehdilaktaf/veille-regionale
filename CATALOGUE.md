@@ -22,6 +22,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 | Meuse | meuse.gouv.fr | section : **select d'années** « Liste-des-recueils-liste-docs » (2026→2006, pas de cartes) → page annuelle de liens directs (sans pagination) | span CMS (100 %) ; nom de fichier « RAA n°26 du 27 février 2026.pdf » en contrôle | 1 (2006 à confirmer) | 2006 (select, à confirmer) | ✗ non testé | — |
 | Bas-Rhin | bas-rhin.gouv.fr | section sous « Publications officielles » : cartes « RAA ANNEE YYYY » (majuscules sans accent, 2026→2017) → page annuelle : **1 select par mois**, tous « Liste-liste-docs » → POST → panneau (pattern Marne/Vendée) | span CMS du panneau POST (100 %) ; mois du dossier mensuel de la value (« Media/Files/22.-RAA/2026/Fevrier/... ») en pré-filtre, libellé « RAA N° X du D mois YYYY » en contrôle | 1 (2017 à confirmer) | 2017 (carte, à confirmer) | ✗ non testé | — |
 | Haut-Rhin | haut-rhin.gouv.fr | cartes d'années à **texte exact « YYYY »** (2026→**1994**, archive très profonde) → page annuelle : cartes docs paginées par 10, **liens directs vers le PDF** (pattern Aube/LA) | attribut `title` de la carte (CMS, « format pdf - 1,02 Mb - 31/08/2026 ») ; texte « Recueil n°100 du 31 août 2026 » en contrôle | 1 (à confirmer sur 1994-2025) | **1994** (cartes) | ✗ non testé | — |
+| Territoire de Belfort | territoire-de-belfort.gouv.fr | section : liens `a.fr-link` plain « Année YYYY » (2026→2015 + 2010, 2011-2014 absents, **coquille : 2021 → page 2022**) → page annuelle de liens directs (sans pagination) | span CMS (100 %) ; nom « recueil-90-2026-014- publié le 02-02-2026.pdf » en contrôle (ancré « publié le », pas « du ») | 1 (slugs longs 2023+ / courts 2015-2022) | 2010 (lien, à confirmer) | ✗ non testé | — |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
 | Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
@@ -62,6 +63,11 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   2026.pdf » porte une date CMS de **février** 2026 — les trois sources
   divergent ; le mois CMS fait foi (warning généré, exclu d'août comme il se
   doit). Le préfixe ne sert donc à rien : ni clé de mois, ni contrôle fiable.
+- **Territoire de Belfort** : le span CMS (date de dépôt du fichier) peut
+  diverger du nom de fichier (« publié le ») sur plusieurs docs de 2026 :
+  n°009 nom 21/01 / CMS juillet, n°095 nom 08/08 / CMS 07, n°126 nom 27/08 /
+  CMS 09. Règle du projet : le mois CMS fait foi (warnings dans les logs) —
+  à creuser au backfill (re-postage probable).
 
 ## Résultats de campagne (2026-09-01)
 
@@ -114,6 +120,12 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   partiel). La section porte un lien PDF égaré dans une carte (« Reccueil
   n°77 du 10 juillet 2026 » — coquille du site) : ignoré (texte ≠ année).
   Archive la plus profonde vue en Grand Est : **1994**.
+- **Territoire de Belfort 2026-02** ✓ : 3/10 docs (n°021-023), ≈9 req
+  (1 GET section + 1 GET annuelle + 3 dl). Domaine `territoire-de-belfort.gouv.fr`
+  (pas `belfort.gouv.fr`, qui ne résout pas). Warnings de divergence
+  CMS/nom sur d'autres mois (n°009 nom 21/01 CMS juil., n°095 nom 08/08
+  CMS 07, n°126 nom 27/08 CMS 09) — le mois CMS fait foi (règle du
+  projet) ; à creuser au backfill (re-postage probable). **Grand Est 10/10.**
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.

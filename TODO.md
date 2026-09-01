@@ -1,6 +1,6 @@
 # TODO — phase d'accès limité (3 fichiers max), avant stockage historique + veille journalière
 
-## En cours : campagne Grand Est (10 dépts, Moselle déjà fait)
+## Fait : campagne Grand Est (10/10, Moselle déjà fait avant)
 Un dépt à la fois, pipeline : découverte (2-4 GET) → client (sous-classe
 existante) → clients.py + tests → `run.py <Dépt> 2026 02 raa_pdfs
 --max-docs 3 --max-wait 1800` (repli 2026-03 si février vide) → CATALOGUE.md +
@@ -16,7 +16,7 @@ déjà testés en 2026-08 avant la bascule.
 - [x] Meuse (55) — 2026-02 ✓ 3/11 (select d'années sur la section → page annuelle de liens directs, span CMS 100 %)
 - [x] Bas-Rhin (67) — 2026-02 ✓ 3/8 (cartes « RAA ANNEE YYYY » sans accent → page annuelle : 1 select/mois « Liste-liste-docs » + POST, pattern Marne)
 - [x] Haut-Rhin (68) — 2026-02 ✓ 3/10 (cartes années texte exact « YYYY » (2026→1994) → cartes docs paginées, liens PDF directs, title CMS)
-- [ ] Territoire de Belfort (90)
+- [x] Territoire de Belfort (90) — 2026-02 ✓ 3/10 (domaine territoire-de-belfort.gouv.fr, liens « Année YYYY » → page annuelle de liens directs, span CMS 100 %)
 Règle WAF : 1 dépt à la fois, espacement, arrêt total si blocage (pas de
 polling), ~4-5 dépts par session.
 
