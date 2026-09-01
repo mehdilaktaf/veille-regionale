@@ -14,7 +14,7 @@ déjà testés en 2026-08 avant la bascule.
 - [x] Haute-Marne (52) — 2026-02 ✓ 3/10 (page annuelle de liens directs, 2026 sans span CMS → date du nom de fichier)
 - [x] Meurthe-et-Moselle (54) — 2026-02 ✓ 3/7 (select « Liste-liste-docs » + POST, pattern Vendée, libellés « Numéro N du D mois YYYY »)
 - [x] Meuse (55) — 2026-02 ✓ 3/11 (select d'années sur la section → page annuelle de liens directs, span CMS 100 %)
-- [ ] Bas-Rhin (67)
+- [x] Bas-Rhin (67) — 2026-02 ✓ 3/8 (cartes « RAA ANNEE YYYY » sans accent → page annuelle : 1 select/mois « Liste-liste-docs » + POST, pattern Marne)
 - [ ] Haut-Rhin (68)
 - [ ] Territoire de Belfort (90)
 Règle WAF : 1 dépt à la fois, espacement, arrêt total si blocage (pas de

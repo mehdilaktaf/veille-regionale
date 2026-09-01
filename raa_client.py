@@ -15,6 +15,7 @@ from urllib.parse import unquote, urljoin
 
 import requests
 from bs4 import BeautifulSoup
+from unidecode import unidecode
 
 logger = logging.getLogger(__name__)
 
@@ -178,14 +179,17 @@ def link_day_month(link):
 
 def find_annual_href(soup, needle):
     """Retourne l'href de la carte h2.fr-card__title dont le texte contient
-    needle (ou None). La comparaison est insensible à la casse et aux
-    espaces multiples : les cartes d'archives oscillent entre « RAA Année
-    2013 », « RAA année 2012 » et « RAA  Année 2022 » (double espace)."""
-    needle_norm = " ".join(needle.lower().split())
+    needle (ou None). La comparaison est insensible à la casse, aux accents
+    et aux espaces multiples : les cartes d'archives oscillent entre « RAA
+    Année 2013 », « RAA année 2012 », « RAA  Année 2022 » (double espace)
+    et « RAA ANNEE 2026 » (Bas-Rhin, sans accent)."""
+    needle_norm = " ".join(unidecode(needle).lower().split())
     for h2 in soup.select("h2.fr-card__title"):
         link = h2.find("a")
         if link and link.get("href"):
-            text_norm = " ".join(link.get_text(strip=True).lower().split())
+            text_norm = " ".join(
+                unidecode(link.get_text(strip=True)).lower().split()
+            )
             if needle_norm in text_norm:
                 return link["href"]
     return None
