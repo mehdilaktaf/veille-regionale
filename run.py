@@ -10,6 +10,10 @@ Le <département> est insensible à la casse/aux accents (« reunion »,
 Reprise : les PDF déjà complets sur disque ne sont pas retéléchargés
 (voir RaaHttpClient.download) ; la fusion n'est écrite qu'après le
 téléchargement complet du mois.
+
+Mode test : --max-docs N ne récupère que les N documents les plus
+récents du mois (la liste complète reste mise en cache) et écrit une
+fusion partielle nommée « RAA_fusionne_partiel_... ».
 """
 
 import argparse
@@ -143,6 +147,21 @@ def cache_path(dest_folder, department, year, month):
     )
 
 
+def limit_to_recent(pdf_links, max_docs):
+    """Retourne les ``max_docs`` documents les plus récents (la liste est
+    triée en ordre chronologique croissant). Inchangé si ``max_docs`` est
+    nul ou supérieur à la taille de la liste."""
+    if not max_docs or len(pdf_links) <= max_docs:
+        return pdf_links
+    return pdf_links[-max_docs:]
+
+
+def merged_filename(month_name, year, department, partial=False):
+    """Nom du PDF fusionné ; « partiel » si mode --max-docs."""
+    kind = "fusionne_partiel" if partial else "fusionne"
+    return f"RAA_{kind}_{month_name}_{year}_{department}.pdf"
+
+
 def load_or_list(client, month, cache_file, refresh=False):
     """Retourne la liste des PDF du mois, depuis le cache s'il est présent,
     sinon en interrogeant le site (et en écrivant le cache)."""
@@ -162,11 +181,16 @@ def load_or_list(client, month, cache_file, refresh=False):
 def run(
     department, year, month, dest_folder,
     request_delay=2.0, max_wait=0, wait_interval=60, refresh=False,
+    max_docs=0,
 ):
     """Récupère puis fusionne le mois : retourne le chemin du PDF fusionné.
 
     Si un téléchargement échoue (blocage WAF), les PDF déjà complets sont
     conservés : relancer la même commande reprend où s'est arrêté le run.
+
+    Avec ``max_docs`` (mode test), seuls les N documents les plus récents
+    du mois sont récupérés et la fusion partielle porte le nom
+    « RAA_fusionne_partiel_... ».
     """
     client = build_client(department, year)
     if request_delay is not None:
@@ -178,12 +202,18 @@ def run(
             "(les PDF déjà téléchargés sont repris)."
         )
 
-    pdf_links = load_or_list(
+    all_links = load_or_list(
         client, month, cache_path(dest_folder, department, year, month), refresh
     )
+    pdf_links = limit_to_recent(all_links, max_docs)
     if not pdf_links:
         raise SystemExit(
             f"Aucun PDF trouvé pour {department} {month}/{year}."
+        )
+    if max_docs and len(pdf_links) < len(all_links):
+        print(
+            f"Mode test : {len(pdf_links)} derniers document(s) sur "
+            f"{len(all_links)} (fusion partielle)."
         )
 
     month_name = MONTH_NAMES_FR[month]
@@ -212,7 +242,8 @@ def run(
 
     # 2. Fusion dans l'ordre chronologique renvoyé par le client.
     merged = os.path.join(
-        dept_dir, f"RAA_fusionne_{month_name}_{year}_{department}.pdf"
+        dept_dir,
+        merged_filename(month_name, year, department, partial=bool(max_docs)),
     )
     merger = PdfMerger()
     for pdf_url, pdf_name in pdf_links:
@@ -251,6 +282,11 @@ def main(argv=None):
         "--refresh", action="store_true",
         help="Re-calculer la liste du mois (ignore le cache)",
     )
+    parser.add_argument(
+        "--max-docs", type=int, default=0,
+        help="Mode test : ne récupérer que les N documents les plus récents "
+        "du mois (fusion partielle « RAA_fusionne_partiel_... ») ; 0 = tout",
+    )
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Journaux au niveau DEBUG")
     args = parser.parse_args(argv)
@@ -272,11 +308,14 @@ def main(argv=None):
     if not (year.isdigit() and len(year) == 4):
         raise SystemExit(f"Année invalide : {args.year!r}")
     month = resolve_month(args.month)
+    if args.max_docs is not None and args.max_docs < 0:
+        raise SystemExit("--max-docs doit être un entier positif ou nul.")
     try:
         run(
             department, year, month, args.dest,
             request_delay=args.delay, max_wait=args.max_wait,
             wait_interval=args.wait_interval, refresh=args.refresh,
+            max_docs=args.max_docs,
         )
     except RaaError as exc:
         print(f"\nArrêt sur blocage WAF : {exc}")
