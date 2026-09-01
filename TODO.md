@@ -6,7 +6,7 @@ existante) → clients.py + tests → `run.py <Dépt> 2026 08 raa_pdfs
 --max-docs 3 --max-wait 1800` (repli 2026-07 si août vide) → CATALOGUE.md +
 AGENTS.md + commit par dépt. Si août 2026 vide → repli juillet, noté au catalogue.
 - [x] Aisne (02) — 2026-08 ✓ 3/21 (cartes années → cartes docs paginées → page doc, span CMS)
-- [ ] Ardennes (08)
+- [x] Ardennes (08) — 2026-08 ✓ 3/19 (page annuelle de liens directs, span CMS 100 %)
 - [ ] Aube (10)
 - [ ] Marne (51)
 - [ ] Haute-Marne (52)

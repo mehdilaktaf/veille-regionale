@@ -6,6 +6,7 @@ département, afin que la GUI et le CLI ne divergent pas.
 """
 
 from aisne_client import AisneRaaClient
+from ardennes_client import ArdennesRaaClient
 from vendee_client import VendeeRaaClient
 from maine_et_loire_client import MaineEtLoireRaaClient
 from sarthe_client import SartheRaaClient
@@ -21,6 +22,7 @@ from moselle_client import MoselleRaaClient
 # URL de base par département ({year} remplacé par l'année ciblée).
 DEPARTMENT_URLS = {
     "Aisne": "https://www.aisne.gouv.fr/Publications/Recueil-des-Actes-Administratifs",
+    "Ardennes": "https://www.ardennes.gouv.fr/Publications/Recueil-des-actes-administratifs",
     "Maine-et-Loire": "https://www.maine-et-loire.gouv.fr/Publications/Recueil-des-Actes-Administratifs",
     "Vendée": "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueils-des-Actes-Administratifs-{year}",
     "Loire-Atlantique": "https://www.loire-atlantique.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA-en-Loire-Atlantique/{year}/",
@@ -48,6 +50,8 @@ def build_client(department, year):
 
     if department == "Aisne":
         return AisneRaaClient(url, year)
+    if department == "Ardennes":
+        return ArdennesRaaClient(url, year)
     if department == "Vendée":
         return VendeeRaaClient(url, year)
     if department == "Maine-et-Loire":

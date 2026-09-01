@@ -14,6 +14,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 | Dépt | Site | Flow (structure des pages) | Date faisant foi | Bandes d'années (flow différent) | Plus vieux year en ligne | Test année ancienne | 2026-08 |
 |---|---|---|---|---|---|---|---|
 | Aisne | aisne.gouv.fr | cartes « RAA Année YYYY » (2026→2010) → cartes docs paginées par 10 (`(offset)/N`, ~17 pages) → page doc (1 lien + span) | span CMS (noms de fichier sans date) | 1 (à confirmer sur 2010-2019) | 2010 (cartes) | ✗ non testé | ✓ test 3/21 OK, full en attente |
+| Ardennes | ardennes.gouv.fr | carte « l'année YYYY » (courante) ou « années antérieures » → cartes années (2025→2017 + commune « 2015 & 2016 ») → page annuelle de liens directs (≈ 288/an, sans pagination) | span CMS (100 %) ; nom de fichier « RAA 8-2026-144 du 31 aout 2026.pdf » en contrôle | **2** : carte directe (année en cours) / carte « années antérieures » ; **page commune 2015 & 2016** (mois ≠ année, à gérer au backfill) | 2015 & 2016 (carte commune) | ✗ non testé | ✓ test 3/19 OK, full en attente |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
 | Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
@@ -49,6 +50,11 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 - **Mayenne** : documents de début 2017 nommés `20170113_RAA_spécial.pdf`
   (YYYYMMDD, sans « du ») → non datables actuellement (gap de backfill,
   pas d'impact accès).
+- **Ardennes** : le préfixe du nom de fichier (`RAA 8-2026-033`, le 8 supposé
+  mois) peut diverger de la date : un doc nommé « RAA 8-2026-033 du 19 janvier
+  2026.pdf » porte une date CMS de **février** 2026 — les trois sources
+  divergent ; le mois CMS fait foi (warning généré, exclu d'août comme il se
+  doit). Le préfixe ne sert donc à rien : ni clé de mois, ni contrôle fiable.
 
 ## Résultats de campagne (2026-09-01)
 
@@ -57,6 +63,9 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   Anomalie de slug : la carte 2018 pointe sur `RAA-Annee-20182` (coquille du
   site) et 2012 sur « RAA année 2012 » en minuscule — géré par
   `find_annual_href` (insensible à la casse, match sur le texte de la carte).
+- **Ardennes 2026-08** ✓ : 3/19 docs (n°142-144), ~8 req (run bon marché :
+  1 page annuelle de 288 liens). Warning de divergence CMS/nom sur
+  « RAA 8-2026-033 du 19 janvier 2026 » (CMS = février) → anomalie documentée.
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.
