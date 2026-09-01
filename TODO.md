@@ -2,12 +2,14 @@
 
 ## En cours : campagne Grand Est (10 dépts, Moselle déjà fait)
 Un dépt à la fois, pipeline : découverte (2-4 GET) → client (sous-classe
-existante) → clients.py + tests → `run.py <Dépt> 2026 08 raa_pdfs
---max-docs 3 --max-wait 1800` (repli 2026-07 si août vide) → CATALOGUE.md +
-AGENTS.md + commit par dépt. Si août 2026 vide → repli juillet, noté au catalogue.
+existante) → clients.py + tests → `run.py <Dépt> 2026 02 raa_pdfs
+--max-docs 3 --max-wait 1800` (repli 2026-03 si février vide) → CATALOGUE.md +
+AGENTS.md + commit par dépt. Mois de test : **2026-02** (décision du 01/09 à
+partir de l'Aube, mois aux problèmes plus communs) ; Aisne et Ardennes
+déjà testés en 2026-08 avant la bascule.
 - [x] Aisne (02) — 2026-08 ✓ 3/21 (cartes années → cartes docs paginées → page doc, span CMS)
 - [x] Ardennes (08) — 2026-08 ✓ 3/19 (page annuelle de liens directs, span CMS 100 %)
-- [ ] Aube (10)
+- [x] Aube (10) — 2026-02 ✓ 3/26 (cartes « RAA YYYY » → cartes docs paginées, liens PDF directs, title CMS)
 - [ ] Marne (51)
 - [ ] Haute-Marne (52)
 - [ ] Meurthe-et-Moselle (54)
