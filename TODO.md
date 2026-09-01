@@ -1,46 +1,43 @@
-# En attente : runs live Réunion + Mayotte (WAF par IP, cooldown long)
+# TODO — phase d'accès limité (3 fichiers max), avant stockage historique + veille journalière
 
-## Correctif du blocage — implémenté + testé (84/84 unittest)
-Le blocage n'est plus géré à la main : `raa_client.py` (`RaaHttpClient`) a
-- **pacing** : délai min `request_delay` (2 s) entre deux requêtes réseau (`_throttle` dans `_get`/`_post`/`download`) ;
-- **retry 4 / cooldown 90 s** sur coupure (`ConnectionError`/`Timeout`) et refus/indispo (HTTP 403-429-502-503-504) — traverse un à-coup ;
-- **reprise** : `download` saute un PDF déjà **complet** (`%PDF-` + `%%EOF`), re-télécharge les tronqués.
-`VendeeRaaClient._post` aligné. `run.py` ajoute la **cache de liste**
-(`<dest>/.raa_list/<dépt>_<année>_<mois>.json`, `--refresh` pour forcer),
-`--max-wait` (sonde 1 GET/min jusqu'au déblocage, sans insister), `--probe`
-(statut + en-têtes WAF/CDN + robots.txt, 1 GET).
+## En cours
+- [ ] Mettre à jour CATALOGUE.md + ce fichier après chaque run.
 
-## État des runs aout 2026
-- ✓ PDL (5) + Guadeloupe + Guyane + Moselle : fusions OK
-- ✓ **Martinique** : 34 docs (n°217–273), fusion 949 p (concordance), reprise des 10 déjà là
-- ⚠ **Réunion** : ~16/~40 actes téléchargés (reprise), **pas encore de fusion ni de cache de liste**
-- ✗ **Mayotte** : non lancée
+## Fait
+- [x] `run.py --max-docs N` : les N plus récents du mois, liste complète en cache,
+      fusion partielle `RAA_fusionne_partiel_<mois>_<année>_<dépt>.pdf` (commit `44baf48`).
+- [x] CATALOGUE.md créé (flows des 11 dépts, bandes d'années, statuts).
+- [x] **Réunion 2026-08 — mode test** : 3/75 actes téléchargés (les plus récents),
+      16 déjà repris, cache `.raa_list/reunion_2026_08.json` créé, ~17 req, pas de blocage.
+- [x] **Mayotte 2026-08 — mode test** : 3/20 actes téléchargés (recueils n°159–161),
+      layout 3 niveaux confirmé, cache `.raa_list/mayotte_2026_08.json` créé,
+      ~27 req, pas de blocage.
 
-## Nettoyage Vendée — fait
-- `2026/aout/` → `2026/août/` ; `RAA_Aout_2026.pdf` →
-  `RAA_fusionne_août_2026_Vendée.pdf` (re-fusion 12 docs, 633 p).
+## Campagne « année ancienne » (1 run/dépt, départ 2017-08, repli 2016-08)
+But : valider l'accès sur chaque flow **et** cartographier les bandes d'années
+à flow différent + la plus vieille année en ligne (voir CATALOGUE.md).
+Cibles prioritaires :
+- [ ] **Mayenne** : trouver la frontière cartes mois / liens directs (2017 probablement
+      liens directs ; sinon tester 2016, puis remonter)
+- [ ] **Martinique** : vérifier la bande Archives (« RAAP YYYY ») sur 2017
+- [ ] **Moselle** : le site legacy remonte-t-il à 2016 (recherche POST 01/08/2016–31/08/2016) ?
+- [ ] Maine-et-Loire, Vendée, Loire-Atlantique, Sarthe, Guadeloupe, Guyane,
+      Réunion, Mayotte : confirmer flow unique sur 2017 (1 run de 3 fichiers chacun)
+Règle : si l'année n'existe pas en ligne (404 / liste vide), remonter d'une année
+et noter « plus vieille année en ligne = YYYY » dans le catalogue.
 
-## À propos du WAF (recherche faite)
-- Limite **non publiée** : c'est une règle privée du WAF de chaque site préfecture,
-  pas de « N req/heure » documenté. Le seuil est un **volume sur fenêtre glissante**
-  (~30–50 req), pas un simple débit → le pacing protège dans un run, pas entre runs.
-- Blocage **par IP, couvre tout `*.gouv.fr` préfecture** (même plateforme CMS).
-  `data.gouv.fr` (infra DINUM) n'est pas affecté. Pas de dataset RAA sur data.gouv.fr
-  (pas d'API officielle de contournement).
-- Symptôme `RemoteDisconnected` = drop de connexion au niveau WAF (pas de 403).
-  `--probe` : pas d'en-tête WAF identifiable, pas de robots.txt → rien à référencer.
-- Le cooldown est **long (30–60 min) et s'auto-entretient** si on continue à taper.
+## En attente (après la phase d'accès)
+- Complétion 2026-08 : Réunion (56 actes restants sur 75 → fusion complète), Mayotte (17 restants sur 20).
+- Conception du mode journalier (reprise incrémentale par dépt, détection des nouveaux docs).
+- Backfill historique complet (toutes les années, tous les mois) — uniquement une fois
+  l'accès validé sur tous les flows.
+- Extension au catalogue des 101 départements (structure CATALOGUE.md extensible).
 
-## Reprise express (quand l'IP est « froide », aucun run depuis ~1 h)
-1 run complet par dépt, contre un WAF reposé (chaque dépt ~40–50 req tient dans une
-fenêtre fraîche) ; `--max-wait` attend le déblocage si besoin :
-```
-python run.py Réunion 2026 08 raa_pdfs --max-wait 1800     # liste→cache→tous les actes→fusion
-python run.py Mayotte 2026 08 raa_pdfs --max-wait 1800     # 1re exécution
-```
-La reprise saute les PDF complets et la liste est en cache : une relance est rapide.
-Vérifier ensuite : nb de docs, pages des fusions, ordre chronologique.
-
-## Rappel
-- Un dépt à la fois, pas d'enchaînement, pas de polling dense sur un site bloqué
-  (AGENTS.md, section Timing).
+## Rappel WAF (ne pas diminuer les délais)
+- Seuil non publié : volume ~30–50 req sur fenêtre glissante, **par IP, tout `*.gouv.fr`
+  préfecture** ; blocage = `RemoteDisconnected` (pas de 403), cooldown 30–60 min
+  auto-entretenu si on continue à taper.
+- Un dépt à la fois, pas d'enchaînement, espacement 5–15 min entre runs ;
+  si blocage : attendre, puis relancer (reprise + cache de liste → relance rapide).
+- La phase de liste reste le poste coûteux (ex. Réunion : ~11 req ; Mayotte : 1 req par
+  acte du mois) ; `--max-docs` limite les téléchargements, pas la liste.

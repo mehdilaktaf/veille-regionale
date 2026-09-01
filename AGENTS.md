@@ -2,7 +2,7 @@
 
 ## Developer Commands
 - Run GUI App: `python app.py`
-- Run headless CLI (un dépt/mois): `python run.py <dépt> <année> <mois> <dossier> [--max-wait S] [--delay S] [--refresh]`
+- Run headless CLI (un dépt/mois): `python run.py <dépt> <année> <mois> <dossier> [--max-wait S] [--delay S] [--refresh] [--max-docs N]`
 - Probe a site (WAF/CDN + robots.txt, 1 GET): `python run.py <dépt> --probe`
 - Run Analysis Script: `python analyse.py [chemin/vers/pdf.pdf]`
 - Run PDF Fetcher (Standalone): `python fetch_and_merge_pdf.py`
@@ -16,7 +16,7 @@
 ## Architecture & Flow
 - `app.py`: Main entry point. GUI for selecting department/year/month to automate scraping and merging of PDFs. Utilise `clients.build_client`.
 - `clients.py`: Source de vérité partagée du mapping département → (URL, classe de client) : `DEPARTMENT_URLS` + `build_client(dépt, année)`. Importé par `app.py` (GUI) et `run.py` (CLI) pour ne pas diverger.
-- `run.py`: CLI headless d'un dépt/mois : liste (mise en cache dans `<dest>/.raa_list/`), téléchargements avec reprise, puis fusion. Options : `--max-wait` (sonde 1 GET/min jusqu'au déblocage WAF), `--delay` (pacing), `--refresh` (re-calculer la liste), `--probe` (diagnostique WAF/CDN + robots.txt). Reprend un run interrompu (les PDF complets ne sont pas retéléchargés, la liste est en cache).
+- `run.py`: CLI headless d'un dépt/mois : liste (mise en cache dans `<dest>/.raa_list/`), téléchargements avec reprise, puis fusion. Options : `--max-wait` (sonde 1 GET/min jusqu'au déblocage WAF), `--delay` (pacing), `--refresh` (re-calculer la liste), `--probe` (diagnostique WAF/CDN + robots.txt), `--max-docs N` (mode test : les N documents les plus récents du mois seulement, fusion partielle nommée `RAA_fusionne_partiel_...` — la liste complète reste en cache). Reprend un run interrompu (les PDF complets ne sont pas retéléchargés, la liste est en cache).
 - `raa_client.py`: Base partagée : session HTTP (`RaaHttpClient`) avec **pacing** (délai min `request_delay` par défaut 2 s entre deux requêtes via `_throttle()`), **retry 4** dont un **cooldown 90 s** sur coupure de connexion/refus (signature du blocage WAF), **reprise** (`download` saute un PDF déjà complet `%PDF-`+`%%EOF`), téléchargement PDF avec contrôle d'en-tête, parsing de dates tolérant (`parse_month`/`parse_day_month`), extraction des dates ancrées sur « du » (`du_day_month`), lecture du span CMS (`link_day_month`), dédoublonnage par nom (`dedupe_documents`), filtrage/tri par mois (`select_month_documents`) et deux classes de patterns : `AnnualPageRaaClient` (page annuelle de liens directs) et `MonthCardsRaaClient` (cartes « Mois YYYY » vers des pages de liens, balayeur de toutes les pages de mois).
 - `vendee_client.py`: Client HTTP du RAA de la Vendée, partagé par `app.py` et `fetch_and_merge_pdf.py`.
 - `maine_et_loire_client.py`: Client HTTP du RAA du Maine-et-Loire (sous-classe de `AnnualPageRaaClient`).
