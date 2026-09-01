@@ -1,43 +1,53 @@
 # TODO — phase d'accès limité (3 fichiers max), avant stockage historique + veille journalière
 
-## En cours
-- [ ] Mettre à jour CATALOGUE.md + ce fichier après chaque run.
+## En cours : cooldown WAF (blocage constaté le 01/09 ~11h15)
+- Ne PLUS sonder/taper sur les sites (le blocage s'auto-entretient).
+- Après ~30-60 min d'arrêt complet, refaire dans l'ordre (1 run à la fois) :
+  1. [ ] `python run.py Réunion 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
+  2. [ ] `python run.py Mayotte 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
+  3. [ ] Frontière Mayenne (cartes vs liens directs) : `run.py Mayenne 2020 08 ...`
+         puis 2019/2021 selon le résultat
+  4. [ ] Profondeur des Archives Martinique (plus vieux RAAP)
+- Mettre à jour CATALOGUE.md (section campagne) après chaque run.
 
 ## Fait
 - [x] `run.py --max-docs N` : les N plus récents du mois, liste complète en cache,
       fusion partielle `RAA_fusionne_partiel_<mois>_<année>_<dépt>.pdf` (commit `44baf48`).
-- [x] CATALOGUE.md créé (flows des 11 dépts, bandes d'années, statuts).
-- [x] **Réunion 2026-08 — mode test** : 3/75 actes téléchargés (les plus récents),
-      16 déjà repris, cache `.raa_list/reunion_2026_08.json` créé, ~17 req, pas de blocage.
-- [x] **Mayotte 2026-08 — mode test** : 3/20 actes téléchargés (recueils n°159–161),
-      layout 3 niveaux confirmé, cache `.raa_list/mayotte_2026_08.json` créé,
-      ~27 req, pas de blocage.
+- [x] CATALOGUE.md créé + campagnes documentées (flows, bandes d'années, anomalies).
+- [x] Flows d'archives implémentés (commit `b4d3d7b`) : sélecteur `a.fr-link` plain,
+      détection re-upload en masse (la date CMS identique sur l'ensemble est
+      rejetée au profit de la source secondaire), mois sans jour (`relaxed_day_month`),
+      slugs sans accents (`du_day_month` normalise `_`), guard `(?<!\d)` sur les
+      dates numériques, M49 + Martinique via carte « Archives »,
+      Vendée archives 1999-2019 (URL `…/Consultez-les-archives-1999-2019/YYYY/YYYY`).
+- [x] **Campagne 2026-08** : Réunion 3/75 ✓ + Mayotte 3/20 ✓ (fusion partielles, caches).
+- [x] **Campagne années anciennes (9/11)** :
+      - Mayenne 2017-08 ✓ (liens directs, n°052-054)
+      - Martinique 2017-08 ✓ (bande Archives, 2 recueils)
+      - Moselle 2016-08 ✓ (legacy remonte à 2016, n°115-118)
+      - Maine-et-Loire 2017-08 ✓ (via Archives RAA, re-upload 17/04/2023)
+      - Sarthe 2018-08 ✓ (plus vieux year = 2018, re-upload 01/09/2023)
+      - Vendée 2017-08 ✓ (flow archives 1999-2019)
+      - Loire-Atlantique 2017-08 ✓ · Guadeloupe 2017-08 ✓ · Guyane 2017-08 ✓
 
-## Campagne « année ancienne » (1 run/dépt, départ 2017-08, repli 2016-08)
-But : valider l'accès sur chaque flow **et** cartographier les bandes d'années
-à flow différent + la plus vieille année en ligne (voir CATALOGUE.md).
-Cibles prioritaires :
-- [ ] **Mayenne** : trouver la frontière cartes mois / liens directs (2017 probablement
-      liens directs ; sinon tester 2016, puis remonter)
-- [ ] **Martinique** : vérifier la bande Archives (« RAAP YYYY ») sur 2017
-- [ ] **Moselle** : le site legacy remonte-t-il à 2016 (recherche POST 01/08/2016–31/08/2016) ?
-- [ ] Maine-et-Loire, Vendée, Loire-Atlantique, Sarthe, Guadeloupe, Guyane,
-      Réunion, Mayotte : confirmer flow unique sur 2017 (1 run de 3 fichiers chacun)
-Règle : si l'année n'existe pas en ligne (404 / liste vide), remonter d'une année
-et noter « plus vieille année en ligne = YYYY » dans le catalogue.
+## Plus vieilles années en ligne connues
+- M49 : **2005** · Vendée : **1999** · Moselle : **2016** · Sarthe : **2018**
+- GL/GY/LA/53/Martinique : 2017 OK (profondeur à explorer)
+- Réunion/Mayotte : à confirmer
 
 ## En attente (après la phase d'accès)
-- Complétion 2026-08 : Réunion (56 actes restants sur 75 → fusion complète), Mayotte (17 restants sur 20).
+- Complétion 2026-08 : Réunion (56 restants sur 75 → fusion complète), Mayotte (17 restants sur 20).
 - Conception du mode journalier (reprise incrémentale par dépt, détection des nouveaux docs).
 - Backfill historique complet (toutes les années, tous les mois) — uniquement une fois
-  l'accès validé sur tous les flows.
+  l'accès validé sur tous les flows. Attention aux gaps identifiés : Mayenne début 2017
+  (noms YYYYMMDD non datables), mois sans jour (classés en début de mois).
 - Extension au catalogue des 101 départements (structure CATALOGUE.md extensible).
 
 ## Rappel WAF (ne pas diminuer les délais)
 - Seuil non publié : volume ~30–50 req sur fenêtre glissante, **par IP, tout `*.gouv.fr`
   préfecture** ; blocage = `RemoteDisconnected` (pas de 403), cooldown 30–60 min
-  auto-entretenu si on continue à taper.
-- Un dépt à la fois, pas d'enchaînement, espacement 5–15 min entre runs ;
-  si blocage : attendre, puis relancer (reprise + cache de liste → relance rapide).
-- La phase de liste reste le poste coûteux (ex. Réunion : ~11 req ; Mayotte : 1 req par
-  acte du mois) ; `--max-docs` limite les téléchargements, pas la liste.
+  auto-entretenu si on continue à taper — **un polling de sonde maintient le blocage**.
+- Un dépt à la fois, pas d'enchaînement ; après un blocage : arrêt total,
+  attendre 30-60 min, relancer (reprise + cache de liste → relance rapide).
+- La phase de liste reste le poste coûteux (Mayotte : 1 req par acte du mois ;
+  Réunion : 1 req par carte RAA du mois + pagination annuelle).

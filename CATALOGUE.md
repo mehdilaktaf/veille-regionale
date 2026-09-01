@@ -5,46 +5,77 @@ structure des pages (flow), source de date faisant foi, bandes d'années à
 flow différent, plus vieille année en ligne — pour dimensionner ensuite le
 stockage historique et la veille journalière (101 départements à terme).
 
-Mode de test en cours : `run.py --max-docs 3` (3 fichiers les plus récents
-du mois, fusion partielle `RAA_fusionne_partiel_...`). Un run à la fois,
-pas d'enchaînement (WAF par IP, seuil ~30–50 req sur fenêtre glissante).
+Mode de test : `run.py --max-docs 3` (3 fichiers les plus récents du mois,
+fusion partielle `RAA_fusionne_partiel_...`). Un dépt à la fois, pas
+d'enchaînement (WAF par IP, seuil ~30–50 req sur fenêtre glissante).
 
-Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · — pas encore de run
+Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente = à refaire
 
-| Dépt | Site | Flow (structure des pages) | Date faisant foi | Bandes d'années (flow différent) | Vieille année testée | 2026-08 |
-|---|---|---|---|---|---|---|
-| Maine-et-Loire | maine-et-loire.gouv.fr | publications → carte « Année YYYY » → page annuelle de liens `a.fr-link--download` | span `fr-link__detail` CMS (100 % des liens) | 1 seule (à confirmer) | ✗ | ✓ full run, fusion OK |
-| Vendée | vendee.gouv.fr | page annuelle `…/Recueils-des-Actes-Administratifs-YYYY` : menu `select#Liste-liste-docs`, lien de téléchargement généré par POST (même URL) | span CMS du panneau de téléchargement (les libellés du menu sont fautifs) | 1 seule (à confirmer) | ✗ | ✓ full run, fusion OK |
-| Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug-mois>/`, cartes `a.fr-card__link.menu-item-link`, paginées par 10 | attribut `title` de la carte (CMS) | 1 seule (à confirmer) | ✗ | ✓ full run, fusion OK |
-| Mayenne | mayenne.gouv.fr | `…/Annee-YYYY` : cartes « Mois YYYY » → page mensuelle **ou** liens directs sur la page annuelle (années anciennes) | span CMS (partiel), sinon texte du lien ancré sur « du » | 2 bandes : cartes (récent) / liens directs (ancien) — frontière inconnue | ✗ (cible) | ✓ full run, fusion OK |
-| Sarthe | sarthe.gouv.fr | publications → carte « RAA - Sarthe - YYYY » → page annuelle de liens (~186/an) | span CMS (100 %) | 1 seule (à confirmer) | ✗ | ✓ full run, fusion OK |
-| Guadeloupe | guadeloupe.gouv.fr | `…/YYYY` : cartes « Mois YYYY » → pages de liens | span CMS (100 %) | 1 seule (à confirmer) | ✗ | ✓ full run, fusion OK |
-| Martinique | martinique.gouv.fr | publications → carte « RAA YYYY » (année courante) **ou** carte « Archives » → « RAAP YYYY » / « R.A.A.P YYYY » (années antérieures) → page annuelle de sous-cartes (RAA + spéciales) → pages de liens | span CMS (100 %) | 2 bandes : carte directe / Archives — frontière inconnue | ✗ (cible) | ✓ full run, fusion OK |
-| Guyane | guyane.gouv.fr | `…/Annee-YYYY` : cartes « Mois YYYY » → pages de liens | span CMS (100 %) | 1 seule (à confirmer) | ✗ | ✓ full run, fusion OK |
-| Réunion | reunion.gouv.fr | page annuelle paginée par 10 : séparateurs de mois (sans date) + cartes RAA → page des actes individuels (pas de recueil composé) | span CMS (100 %) | 1 seule (à confirmer) | ✗ | ⚠ test 3/75 OK, full run en attente |
-| Mayotte | mayotte.gouv.fr | 3 niveaux : `…/RAA-YYYY` → cartes « MOIS YYYY » (majuscules, année parfois absente) → cartes documents paginées par 10 → page document (1 lien + span CMS) | span CMS (100 %) | 1 seule (à confirmer) | ✗ | ⚠ test 3/20 OK, full run en attente |
-| Moselle | mc.moselle.gouv.fr (site legacy) | recherche POST par date (`exec_search_rec`), tableau `table.table_list` paginé (« > »), téléchargement par `docfile_md5id` | « Date de publication » du tableau | 1 seule, « toutes les années » (à confirmer depuis 2016) | ✗ (cible 2016) | ✓ full run, fusion OK |
+| Dépt | Site | Flow (structure des pages) | Date faisant foi | Bandes d'années (flow différent) | Plus vieux year en ligne | Test année ancienne | 2026-08 |
+|---|---|---|---|---|---|---|---|
+| Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
+| Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
+| Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
+| Mayenne | mayenne.gouv.fr | 2026 : cartes mois → pages mensuelles ; 2017 : liens directs `a.fr-link` plain (sans `--download`, sans span) | span CMS (récent) ; texte du lien ancré « du » (2017) | **2** : cartes / liens directs — frontière entre 2018 et 2026 (à affiner) | 2017 (testé) | ✓ 2017-08 (3/10) | ✓ full run |
+| Sarthe | sarthe.gouv.fr | cartes « RAA - Sarthe - YYYY » → page annuelle de liens | span CMS (récent) ; noms de fichier (2018 : re-upload, mois seul) | 1 (pas de carte archives) | **2018** | ✓ 2018-08 (3/11) | ✓ full run |
+| Guadeloupe | guadeloupe.gouv.fr | cartes « Mois YYYY » → pages de liens | span CMS | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/9) | ✓ full run |
+| Martinique | martinique.gouv.fr | « RAA YYYY » (courante) ou « Archives » → « RAAP YYYY » → sous-cartes RAA + spéciales | span CMS | **2** : carte directe / Archives (RAAP) | à explorer sous Archives | ✓ 2017-08 (2 docs) | ✓ full run |
+| Guyane | guyane.gouv.fr | cartes « Mois YYYY » → pages de liens | span CMS | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/24) | ✓ full run |
+| Réunion | reunion.gouv.fr | page annuelle paginée : séparateurs mois + cartes RAA → actes individuels | span CMS | 1 (à confirmer sur 2017) | à confirmer | en attente (bloqué WAF) | ⚠ test 3/75 OK, full en attente |
+| Mayotte | mayotte.gouv.fr | 3 niveaux : cartes mois → cartes docs paginées par 10 → page doc (1 lien + span) | span CMS | 1 (à confirmer sur 2017) | à confirmer | en attente (après cooldown WAF) | ⚠ test 3/20 OK, full en attente |
+| Moselle | mc.moselle.gouv.fr (legacy) | recherche POST par date, `table.table_list` paginée, md5id | « Date de publication » du tableau | 1, **remonte à 2016** | **2016** (testé) | ✓ 2016-08 (3/14, n°115-118) | ✓ full run |
 
-## Résultats de campagne (à compléter au fil des runs)
+## Anomalies de données découvertes (années anciennes)
 
-<!-- Après chaque run : date, commande, nb req, layout observé, anomalies -->
+- **Re-upload en masse des archives** : les spans CMS des pages d'archives
+  portent la **date de re-publication** (identique pour tous les liens), pas
+  la date de publication : M49 2017 → 17/04/2023 sur 101 liens ; Sarthe 2018 →
+  01/09/2023 sur 104 liens ; Vendée 1999-2019 → idem. Géré par
+  `_bulk_reupload_inversion` (raa_client.py) : si une même date CMS couvre la
+  majorité des docs et est contredite par la source secondaire → celle-ci
+  fait foi (warning dans les logs).
+- **Noms de fichier en slug sans accents** (archives) : `101-raa_secial_du_29_decembre_2017.pdf`
+  (très souvent la seule source de date) → `du_day_month` normalise les
+  tirets bas ; variante tronquée `decembe` ajoutée à MONTHS_FR.
+- **Mois sans jour** : `raa_mensuel_no_89_-decembe_2018.pdf` (Sarthe) →
+  `relaxed_day_month` retourne (None, mois) ; le doc est classé en début de
+  mois avec un warning « jour inconnu ».
+- **Faux positif date** : « 2017-01 » (année-mois) lu comme 17/01 → guard
+  `(?<!\d)` ajoutée sur `_DATE_NUM`.
+- **Libellé Vendée archives** : le texte du lien inclut le span (« PDF -
+  5,0 Mb - 05/08/2023 ») qui fausse le parsing du libellé → retiré avant
+  parsing dans `_archive_documents`.
+- **Mayenne** : documents de début 2017 nommés `20170113_RAA_spécial.pdf`
+  (YYYYMMDD, sans « du ») → non datables actuellement (gap de backfill,
+  pas d'impact accès).
 
-### Réunion 2026-08 — mode test 3 fichiers
-- Commande : `python run.py Réunion 2026 08 raa_pdfs --max-docs 3 --max-wait 1800`
-- Statut : ✓ OK (2026-09-01)
-- Liste : 75 actes en août 2026, mise en cache (`.raa_list/reunion_2026_08.json`)
-- Layout observé : page annuelle paginée par 10 (séparateurs de mois sans date +
-  cartes RAA) → page d'actes individuels, span CMS 100 % — conforme 2026
-- Téléchargés : 3 derniers (arrêtés délégation/désignation, 1er août), complets
-- Repris : les 16 actes déjà sur disque non retéléchargés
-- Anomalies : aucune ; ~17 req totales (sonde incluse), aucun blocage
+## Résultats de campagne (2026-09-01)
 
-### Mayotte 2026-08 — mode test 3 fichiers
-- Commande : `python run.py Mayotte 2026 08 raa_pdfs --max-docs 3 --max-wait 1800`
-- Statut : ✓ OK (2026-09-01)
-- Liste : 20 actes en août 2026, mise en cache (`.raa_list/mayotte_2026_08.json`)
-- Layout observé : 3 niveaux confirmés — cartes « AOÛT 2026 » → cartes documents
-  paginées par 10 → page document (1 lien `fr-link--download` + span CMS 100 %)
-- Téléchargés : recueils n°159–161 (les 3 plus récents), complets
-- Anomalies : aucune ; noms de fichier sans date (`recueil-r06-2026-NNN-...`),
-  mois fait foi du span CMS (conforme) ; ~27 req totales (sonde incluse), aucun blocage
+### Phase 2026-08 (mode test 3 fichiers)
+- **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.
+- **Mayotte** ✓ : 3/20 actes (n°159-161), layout 3 niveaux confirmé, ~27 req.
+
+### Phase années anciennes (départ 2017-08, repli par dépt)
+- **Mayenne 2017-08** ✓ : layout « liens directs » confirmé (125 liens/an,
+  sans pagination) ; 3 recueils n°052-054.
+- **Martinique 2017-08** ✓ : bande Archives fonctionnelle (2 recueils).
+- **Moselle 2016-08** ✓ : site legacy remonte bien à 2016 (n°115-118).
+- **Maine-et-Loire 2017-08** ✓ : via carte « Archives RAA » (2005-2021) ;
+  inversion re-upload déclenchée (spans 17/04/2023), noms slug.
+- **Sarthe 2018-08** ✓ : plus vieux year en ligne = 2018 (pas de 2017) ;
+  inversion re-upload (spans 01/09/2023), mois seul dans les noms.
+- **Vendée 2017-08** ✓ : flow archives découverts + implémentés (URL
+  double `/2017/2017`, 150 liens, libellé « publié le »).
+- **Loire-Atlantique 2017-08** ✓ : même flow mensuel qu'en 2026.
+- **Guadeloupe 2017-08** ✓ : même flow cartes mois.
+- **Guyane 2017-08** ✓ : même flow cartes mois.
+- **Réunion 2017-08** : **bloqué WAF** au lancement (30 min d'attente
+  infructueuse) → à refaire après cooldown.
+- **Mayotte 2017-08** : en attente (même blocage).
+
+### À faire après le cooldown WAF
+1. `python run.py Réunion 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
+2. `python run.py Mayotte 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
+3. Affiner la frontière Mayenne (cartes vs liens directs) : tester 2020,
+   puis 2019/2021 selon le résultat (runs bon marché : 1 GET + 3 dl).
+4. Explorer la profondeur des Archives Martinique (quel est le plus vieux RAAP ?).
