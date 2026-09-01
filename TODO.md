@@ -1,14 +1,28 @@
 # TODO — phase d'accès limité (3 fichiers max), avant stockage historique + veille journalière
 
-## En cours : cooldown WAF (blocage constaté le 01/09 ~11h15)
-- Ne PLUS sonder/taper sur les sites (le blocage s'auto-entretient).
-- Après ~30-60 min d'arrêt complet, refaire dans l'ordre (1 run à la fois) :
-  1. [ ] `python run.py Réunion 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
-  2. [ ] `python run.py Mayotte 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
-  3. [ ] Frontière Mayenne (cartes vs liens directs) : `run.py Mayenne 2020 08 ...`
-         puis 2019/2021 selon le résultat
-  4. [ ] Profondeur des Archives Martinique (plus vieux RAAP)
-- Mettre à jour CATALOGUE.md (section campagne) après chaque run.
+## En cours : campagne Grand Est (10 dépts, Moselle déjà fait)
+Un dépt à la fois, pipeline : découverte (2-4 GET) → client (sous-classe
+existante) → clients.py + tests → `run.py <Dépt> 2026 08 raa_pdfs
+--max-docs 3 --max-wait 1800` (repli 2026-07 si août vide) → CATALOGUE.md +
+AGENTS.md + commit par dépt. Si août 2026 vide → repli juillet, noté au catalogue.
+- [x] Aisne (02) — 2026-08 ✓ 3/21 (cartes années → cartes docs paginées → page doc, span CMS)
+- [ ] Ardennes (08)
+- [ ] Aube (10)
+- [ ] Marne (51)
+- [ ] Haute-Marne (52)
+- [ ] Meurthe-et-Moselle (54)
+- [ ] Meuse (55)
+- [ ] Bas-Rhin (67)
+- [ ] Haut-Rhin (68)
+- [ ] Territoire de Belfort (90)
+Règle WAF : 1 dépt à la fois, espacement, arrêt total si blocage (pas de
+polling), ~4-5 dépts par session.
+
+## Parking : années anciennes (reprendre après le Grand Est)
+1. [ ] `python run.py Réunion 2017 08 raa_pdfs --max-docs 3 --max-wait 1800` (bloqué le 01/09)
+2. [ ] `python run.py Mayotte 2017 08 raa_pdfs --max-docs 3 --max-wait 1800`
+3. [ ] Frontière Mayenne (cartes vs liens directs) : tester 2020, puis 2019/2021
+4. [ ] Profondeur des Archives Martinique (plus vieux RAAP)
 
 ## Fait
 - [x] `run.py --max-docs N` : les N plus récents du mois, liste complète en cache,

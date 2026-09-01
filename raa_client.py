@@ -158,6 +158,16 @@ def relaxed_day_month(text):
     return None
 
 
+def month_of_text(text):
+    """Retourne le code « MM » du premier mois (en lettres) présent dans le
+    texte, ou None. Les tirets bas sont normalisés (« RAA_Janvier_02-2026-001 »
+    → « 01 ») ; « Sommaire RAA » → None."""
+    match = _MONTH_ONLY.search(text.replace("_", " "))
+    if match:
+        return MONTHS_FR.get(match.group(1).lower())
+    return None
+
+
 def link_day_month(link):
     """Extrait (jour, mois) du span.fr-link__detail d'un lien (ou None)."""
     detail = link.find("span", class_="fr-link__detail")
@@ -168,10 +178,16 @@ def link_day_month(link):
 
 def find_annual_href(soup, needle):
     """Retourne l'href de la carte h2.fr-card__title dont le texte contient
-    needle (ou None)."""
+    needle (ou None). La comparaison est insensible à la casse : les cartes
+    d'archives oscillent entre « RAA Année 2013 » et « RAA année 2012 »."""
+    needle_lower = needle.lower()
     for h2 in soup.select("h2.fr-card__title"):
         link = h2.find("a")
-        if link and link.get("href") and needle in link.get_text(strip=True):
+        if (
+            link
+            and link.get("href")
+            and needle_lower in link.get_text(strip=True).lower()
+        ):
             return link["href"]
     return None
 
