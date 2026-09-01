@@ -45,7 +45,7 @@ def build_client(department, year):
         raise ValueError(f"Département non pris en charge : {department!r}") from None
 
     if department == "Vendée":
-        return VendeeRaaClient(url)
+        return VendeeRaaClient(url, year)
     if department == "Maine-et-Loire":
         return MaineEtLoireRaaClient(url, year)
     if department == "Sarthe":

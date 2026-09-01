@@ -41,12 +41,13 @@ MONTH_JUIN_HTML = """
 </body></html>
 """
 
-# Layout ancien (2024) : liens directs sur la page annuelle, dates dans le texte
+# Layout ancien (observé 2017) : liens directs sur la page annuelle,
+# a.fr-link plain (sans --download), sans span CMS, dates dans le texte.
 ANNUAL_DIRECT_HTML = """
 <html><body>
-<a class="fr-link fr-link--download" href="/contenu/telechargement/6/6/file/recueil-53-2024-200.pdf">
+<a class="fr-link" href="/content/download/30478/224835/file/recueil-53-2024-200.pdf">
 RAA du 31 décembre 2024</a>
-<a class="fr-link fr-link--download" href="/contenu/telechargement/7/7/file/recueil-53-2024-199-special.pdf">
+<a class="fr-link" href="/content/download/30477/224834/file/recueil-53-2024-199-special.pdf">
 RAA spécial du 30 décembre 2024</a>
 </body></html>
 """

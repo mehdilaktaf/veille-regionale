@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import time
+from collections import Counter
 from urllib.parse import unquote, urljoin
 
 import requests
@@ -27,6 +28,8 @@ MONTHS_FR = {
     "avril": "04", "mai": "05", "juin": "06", "juillet": "07",
     "aout": "08", "août": "08", "septembre": "09", "octobre": "10",
     "novembre": "11", "decembre": "12", "décembre": "12",
+    # variante des slugs CMS tronqués (« ...-decembe_2018.pdf »)
+    "decembe": "12",
 }
 
 # Noms des mois (« MM » -> nom), pour construire les URLs/page de mois
@@ -41,10 +44,22 @@ MONTH_NAMES_FR = {
 # faussement des numéros de document (ex. « 2026-069 » lu en 26/06).
 _DU_ANCRE = re.compile(r"\bdu\s+(.{0,40})")
 
+# Mois seul, sans jour (noms d'archive : « decembe_2018 »,
+# « RAA mensuel n° 89 - Décembre 2018 ») ; tirets bas tolérés, « decembe »
+# pour le slug tronqué de « décembre ». Frontières : pas de lettre avant ni
+# après (« maison »/« maintenant » ne comptent pas, mais « _mai_2026 » oui).
+_MONTH_ONLY = re.compile(
+    r"(?<![a-zA-Z])(janvier|fevrier|février|mars|avril|juillet|juin|aout|août|"
+    r"septembre|octobre|novembre|decembre|décembre|decembe|mai)"
+    r"(?![a-zA-Z])[\s_]*(?:-?(\d{4}))?",
+    re.IGNORECASE,
+)
+
 # Date numérique tolérante : jj/mm/année, séparateurs répétés ou variés,
 # année à 2-4 chiffres optionnelle (« 20/08/026 », « 19//06/2026 »,
-# « 17/08 »).
-_DATE_NUM = re.compile(r"(\d{1,2})[\s/\-]+(\d{1,2})(?:[\s/\-]+(\d{2,4}))?")
+# « 17/08 »). Le (?<!\d) évite de lire le suffixe d'un numéro : « 2017-01 »
+# (année-mois) ne donne pas le 17/01.
+_DATE_NUM = re.compile(r"(?<!\d)(\d{1,2})[\s/\-]+(\d{1,2})(?:[\s/\-]+(\d{2,4}))?")
 
 # Date compacte sans séparateur : « 23062026 »
 _DATE_COMPACT = re.compile(r"(?<!\d)(\d{2})(\d{2})(\d{4})(?!\d)")
@@ -52,11 +67,17 @@ _DATE_COMPACT = re.compile(r"(?<!\d)(\d{2})(\d{2})(\d{4})(?!\d)")
 # Date française : « 5 janvier 2024 », ordinal (« 1er juillet 2026 »)
 # et année optionnelle (« 08 janvier_tempete »)
 _DATE_FR = re.compile(
-    r"(\d{1,2})(?:er|ère)?\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|"
-    r"aout|août|septembre|octobre|novembre|decembre|décembre)"
-    r"(?:\s+(\d{4}))?",
+    r"(\d{1,2})(?:er|ère)?[\s_]+(janvier|fevrier|février|mars|avril|mai|juin|juillet|"
+    r"aout|août|septembre|octobre|novembre|decembre|décembre|decembe)"
+    r"(?:[\s_]+(\d{4}))?",
     re.IGNORECASE,
 )
+
+
+# Liens de téléchargement de la plateforme CMS : a.fr-link--download sur
+# les années récentes ; sur les années anciennes (ex. Mayenne ≤ 2024) les
+# liens sont des a.fr-link simples menant directement à un .pdf.
+DOWNLOAD_LINK_SELECTOR = "a.fr-link--download, a.fr-link[href$='.pdf']"
 
 
 class RaaError(Exception):
@@ -99,8 +120,12 @@ def parse_month(text):
 
 def du_day_month(text):
     """Extrait (jour, mois) d'un texte ancré sur « du » (noms de fichier,
-    textes de lien du type « RAA du 28 août 2026 »). None si aucune date."""
-    match = _DU_ANCRE.search(text)
+    textes de lien du type « RAA du 28 août 2026 »). None si aucune date.
+
+    Les tirets bas sont normalisés en espaces : les archives hébergent des
+    noms de fichier en slug sans accents (« raa_special_du_29_decembre_2017 »).
+    """
+    match = _DU_ANCRE.search(text.replace("_", " "))
     if match:
         return parse_day_month(match.group(1))
     return None
@@ -112,6 +137,25 @@ def du_month(text):
     if day_month is None:
         return None
     return f"{day_month[1]:02d}"
+
+
+def relaxed_day_month(text):
+    """Extrait (jour, mois) d'un texte, en tolérant l'absence de jour.
+
+    Retourne (jour, mois) si la date complète est présente, (None, mois)
+    si seul le mois est lisible (« decembe_2018 », « Décembre 2018 »),
+    sinon None. Sert de source secondaire de date pour les documents
+    d'archives dont le jour est perdu.
+    """
+    day_month = parse_day_month(text)
+    if day_month is not None:
+        return day_month
+    match = _MONTH_ONLY.search(text.replace("_", " "))
+    if match:
+        month = MONTHS_FR.get(match.group(1).lower())
+        if month is not None:
+            return (None, int(month))
+    return None
 
 
 def link_day_month(link):
@@ -146,18 +190,63 @@ def dedupe_documents(documents):
     return list(seen.values())
 
 
+def _bulk_reupload_inversion(documents):
+    """True si la date CMS ne peut pas faire foi : une même date (jour+mois)
+    couvre la majorité des documents datés par le CMS, et les dates
+    secondaires la contredisent — signature d'un re-upload en masse
+    (pages d'archives, ex. Maine-et-Loire ≤ 2021 : tous les liens portent
+    la date de re-publication, la vraie date de publication étant dans le
+    nom de fichier)."""
+    cms_dates = [day_month for _, _, day_month, _ in documents if day_month is not None]
+    if len(cms_dates) < 3:
+        return False
+    mode_date, count = Counter(cms_dates).most_common(1)[0]
+    if count * 2 <= len(cms_dates):
+        return False
+    contradicting = sum(
+        1
+        for _, _, day_month, second in documents
+        if day_month == mode_date and second is not None and second[1] != day_month[1]
+    )
+    return contradicting * 2 >= count
+
+
 def select_month_documents(documents, month, secondary_source="nom de fichier"):
     """Filtre et trie des documents pour un mois donné.
 
     documents : itérable de (url, nom, jour_mois_cms, jour_mois_secondaire).
+    Chaque date est (jour, mois), le jour pouvant être None (mois seul).
     Le mois CMS fait foi (désaccord avec le secondaire → warning) ; sans
     date CMS, le secondaire est utilisé avec un warning « non vérifié » ;
     sans aucune date → exclu (warning).
+    Sur une page de re-upload en masse (voir _bulk_reupload_inversion),
+    c'est le secondaire qui fait foi.
 
-    Retourne (url, nom) en ordre chronologique croissant (jour, nom).
+    Retourne (url, nom) en ordre chronologique croissant (jour, nom) ;
+    un jour inconnu est classé en début de mois.
     """
+    documents = list(documents)
+    inverted = _bulk_reupload_inversion(documents)
+    if inverted:
+        logger.warning(
+            "Re-upload en masse supposé : date CMS identique sur l'essentiel "
+            "des documents et contredite par le %s — le %s fait foi.",
+            secondary_source, secondary_source,
+        )
+
     results = []
+
+    def _append(day_month, name, url):
+        day = day_month[0] if day_month[0] is not None else 0
+        results.append((day, name, url))
+
     for url, name, cms_day_month, second_day_month in documents:
+        if inverted:
+            if second_day_month is None:
+                logger.warning("Document sans date exploitable (exclu) : %s", name)
+            elif f"{second_day_month[1]:02d}" == month:
+                _append(second_day_month, name, url)
+            continue
         if cms_day_month is not None:
             if second_day_month is not None and second_day_month[1] != cms_day_month[1]:
                 logger.warning(
@@ -167,14 +256,19 @@ def select_month_documents(documents, month, secondary_source="nom de fichier"):
                 )
             if f"{cms_day_month[1]:02d}" != month:
                 continue
-            sort_day = cms_day_month[0]
+            _append(cms_day_month, name, url)
         elif second_day_month is not None and f"{second_day_month[1]:02d}" == month:
-            logger.warning("Date non vérifiée (pas de span CMS) : %s", name)
-            sort_day = second_day_month[0]
+            if second_day_month[0] is None:
+                logger.warning(
+                    "Date non vérifiée (jour inconnu, classé en début de mois) : %s",
+                    name,
+                )
+            else:
+                logger.warning("Date non vérifiée (pas de span CMS) : %s", name)
+            _append(second_day_month, name, url)
         else:
             logger.warning("Document sans date exploitable (exclu) : %s", name)
             continue
-        results.append((sort_day, name, url))
     results.sort(key=lambda item: (item[0], item[1]))
     if not results:
         logger.info("Aucun document trouvé pour le mois %s.", month)
@@ -320,24 +414,47 @@ class AnnualPageRaaClient(RaaHttpClient):
 
     - une page publications avec des cartes « Année YYYY »
       (h2.fr-card__title, texte repéré par card_needle) ;
-    - une page annuelle listant directement les liens
-      a.fr-link--download, chacun portant un span.fr-link__detail
-      généré par le CMS (« PDF - 10,51 Mb - 28/08/2026 »), source de
-      vérité pour la date de publication.
+    - une page annuelle listant directement les liens de téléchargement
+      (span.fr-link__detail CMS = « PDF - 10,51 Mb - 28/08/2026 »,
+      source de vérité pour la date de publication).
+
+    Si ``archives_needle`` est donné (texte de la carte « Archives »),
+    les cartes d'années absentes de la page publications sont cherchées
+    sous cette carte (années antérieures : Maine-et-Loire, Martinique).
     """
 
-    def __init__(self, base_url, card_needle, timeout=60):
+    def __init__(self, base_url, card_needle, timeout=60, archives_needle=None):
         super().__init__(base_url, timeout)
-        self.card_needle = card_needle
+        self.card_needles = (
+            (card_needle,) if isinstance(card_needle, str) else tuple(card_needle)
+        )
+        self.card_needle = self.card_needles[0]
+        self.archives_needle = archives_needle
         self.annual_page_url = None
 
     def find_annual_page(self):
-        """Retourne l'URL absolue de la page annuelle (ou None)."""
+        """Retourne l'URL absolue de la page annuelle (ou None).
+
+        Cherche d'abord sur la page publications, puis sous la carte
+        « Archives » si ``archives_needle`` est défini.
+        """
         soup = BeautifulSoup(self._get(self.base_url).text, "html.parser")
-        href = find_annual_href(soup, self.card_needle)
-        if href is None:
-            return None
-        return urljoin(self.base_url, href)
+        for needle in self.card_needles:
+            href = find_annual_href(soup, needle)
+            if href is not None:
+                return urljoin(self.base_url, href)
+        if self.archives_needle is not None:
+            archives_href = find_annual_href(soup, self.archives_needle)
+            if archives_href is not None:
+                archives_soup = BeautifulSoup(
+                    self._get(urljoin(self.base_url, archives_href)).text,
+                    "html.parser",
+                )
+                for needle in self.card_needles:
+                    href = find_annual_href(archives_soup, needle)
+                    if href is not None:
+                        return urljoin(self.base_url, href)
+        return None
 
     def list_documents(self):
         """Retourne les documents de la page annuelle :
@@ -356,7 +473,7 @@ class AnnualPageRaaClient(RaaHttpClient):
         soup = BeautifulSoup(self._get(self.annual_page_url).text, "html.parser")
         container = soup.select_one(".fr-col-12.fr-col-md-8") or soup
         documents = []
-        for link in container.select("a.fr-link.fr-link--download"):
+        for link in container.select(DOWNLOAD_LINK_SELECTOR):
             href = link.get("href")
             if not href:
                 continue
@@ -366,7 +483,7 @@ class AnnualPageRaaClient(RaaHttpClient):
                     urljoin(self.base_url, href),
                     name,
                     link_day_month(link),
-                    du_day_month(name),
+                    relaxed_day_month(name),
                 )
             )
         return documents
@@ -403,7 +520,7 @@ class MonthCardsRaaClient(RaaHttpClient):
         return None
 
     def _collect(self, soup, documents):
-        for link in soup.select("a.fr-link.fr-link--download"):
+        for link in soup.select(DOWNLOAD_LINK_SELECTOR):
             href = link.get("href")
             if not href:
                 continue
@@ -413,7 +530,7 @@ class MonthCardsRaaClient(RaaHttpClient):
                     urljoin(self.base_url, href),
                     name,
                     link_day_month(link),
-                    du_day_month(link.get_text(strip=True)),
+                    relaxed_day_month(link.get_text(strip=True)),
                 )
             )
 

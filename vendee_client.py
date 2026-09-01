@@ -1,27 +1,37 @@
 """Client HTTP (sans navigateur) du RAA de la Vendée.
 
-Le site génère le lien de téléchargement en réponse à un POST vers la
-même URL que la page annuelle, avec le champ « Liste-liste-docs ».
-Le panneau de téléchargement (span.fr-link__detail) porte une date
-générée par le CMS : c'est la source de vérité pour le mois d'un
-document, les libellés du menu comportant des fautes de saisie
+Années 2020+ : le site génère le lien de téléchargement en réponse à un
+POST vers la même URL que la page annuelle, avec le champ
+« Liste-liste-docs ». Le panneau de téléchargement (span.fr-link__detail)
+porte une date générée par le CMS : c'est la source de vérité pour le
+mois d'un document, les libellés du menu comportant des fautes de saisie
 (« 20/08/026 », « 19//06/2026 », dates absentes).
+
+Années 1999-2019 (archives) : page « …/Consultez-les-archives-1999-2019/
+YYYY/YYYY » listant directement les liens a.fr-link--download ; la date
+de publication est dans le libellé « publié le … » (le span CMS porte la
+date de re-publication de l'archive — le re-upload en masse fait basculer
+select_month_documents sur le libellé).
 """
 
 import logging
 import re
 import time
+from urllib.parse import unquote, urljoin
 
 import requests
 from bs4 import BeautifulSoup
 
 from raa_client import (
+    DOWNLOAD_LINK_SELECTOR,
     RaaError,
     RaaHttpClient,
     _DATE_FR,
     MONTHS_FR,
+    link_day_month,
     parse_day_month,
     parse_month,
+    select_month_documents,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,6 +94,18 @@ def label_month(label, value=""):
 class VendeeRaaClient(RaaHttpClient):
     """Client HTTP (sans navigateur) du RAA de la Vendée."""
 
+    # Les années 1999-2019 sont sur une page d'archives dédiée (le
+    # pattern « Recueils-des-Actes-Administratifs-YYYY » 404).
+    ARCHIVE_URL = (
+        "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs/"
+        "Consultez-les-archives-1999-2019/{year}/{year}"
+    )
+
+    def __init__(self, base_url, year=None, timeout=60):
+        super().__init__(base_url, timeout)
+        if year is not None and int(year) <= 2019:
+            self.base_url = self.ARCHIVE_URL.format(year=year)
+
     def _post(self, payload, max_retries=3):
         last_exc = None
         for attempt in range(max_retries + 1):
@@ -110,7 +132,8 @@ class VendeeRaaClient(RaaHttpClient):
         ) from last_exc
 
     def list_documents(self):
-        """Retourne la liste des documents de la page : (value, label, mois).
+        """Retourne la liste des documents du menu annuel :
+        (value, label, mois).
 
         Le mois est extrait du libellé (pré-filtre) ; None si l'option ne
         porte pas de date exploitable.
@@ -122,6 +145,11 @@ class VendeeRaaClient(RaaHttpClient):
             raise RaaError(
                 f"Formulaire « Liste-liste-docs » introuvable sur {self.base_url}"
             )
+        return self._menu_documents(select)
+
+    @staticmethod
+    def _menu_documents(select):
+        """Documents du menu : (value, label, mois pré-filtre)."""
         documents = []
         for option in select.find_all("option"):
             value = (option.get("value") or "").strip()
@@ -129,6 +157,31 @@ class VendeeRaaClient(RaaHttpClient):
                 continue
             label = option.get("title") or option.get_text(strip=True)
             documents.append((value, label, label_month(label, value)))
+        return documents
+
+    def _archive_documents(self, soup):
+        """Années 1999-2019 (liens directs) : (url, nom, date span, date
+        libellé « publié le »).
+
+        Le détail du span (date de re-publication, format « PDF - X Mb -
+        JJ/MM/AAAA ») est retiré du libellé avant parsing : un parsing
+        numérique le daterait sur la date de re-upload.
+        """
+        documents = []
+        for link in soup.select(DOWNLOAD_LINK_SELECTOR):
+            href = link.get("href")
+            if not href:
+                continue
+            name = unquote(href.split("/")[-1])
+            label = link.get_text(" ", strip=True).split(" PDF - ")[0]
+            documents.append(
+                (
+                    urljoin(self.base_url, href),
+                    name,
+                    link_day_month(link),
+                    label_day_month(label),
+                )
+            )
         return documents
 
     def get_download_url(self, doc_value):
@@ -166,13 +219,25 @@ class VendeeRaaClient(RaaHttpClient):
         """Retourne les liens des PDF du mois, en ordre chronologique
         croissant : (url_absolue, nom_de_fichier).
 
-        Le libellé du menu ne sélectionne que les candidats ; le mois
-        faisant foi est celui du panneau de téléchargement (CMS). Les
-        documents sans date au menu sont aussi vérifiés (« balayeur »).
-        Un document dont la date CMS diffère du mois cible est exclu
-        avec un warning.
+        Années 2020+ : le libellé du menu ne sélectionne que les candidats ;
+        le mois faisant foi est celui du panneau de téléchargement (CMS).
+        Les documents sans date au menu sont aussi vérifiés (« balayeur »).
+        Un document dont la date CMS diffère du mois cible est exclu avec
+        un warning.
+
+        Années 1999-2019 (archives, liens directs) : le libellé « publié
+        le » fait foi (le span CMS est la date de re-publication ; le
+        re-upload en masse bascule select_month_documents sur le
+        libellé).
         """
-        documents = self.list_documents()
+        response = self._get(self.base_url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        if soup.select_one("select#Liste-liste-docs") is None:
+            return select_month_documents(
+                self._archive_documents(soup), month,
+                secondary_source="libellé « publié »",
+            )
+        documents = self._menu_documents(soup.select_one("select#Liste-liste-docs"))
         candidates = [(v, l) for v, l, m in documents if m == month]
         sweep = [(v, l) for v, l, m in documents if m is None]
         if not candidates and not sweep:

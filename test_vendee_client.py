@@ -1,6 +1,41 @@
 import unittest
+from types import SimpleNamespace
 
-from vendee_client import label_month, parse_month
+from vendee_client import VendeeRaaClient, label_month, parse_month
+
+BASE_2026 = (
+    "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs/"
+    "Recueils-des-Actes-Administratifs-2026"
+)
+
+# Page d'archive 2017 : liens directs, libellé « publié le » = vraie date,
+# span CMS = date de re-publication (identique pour tous).
+_ARCHIVE_ROWS = [
+    ("2017-48.pdf", "SPECIAL 2017- 48", "16 août 2017"),
+    ("2017-49.pdf", "2017-49", "17 août 2017"),
+    ("2017-50.pdf", "2017-50", "18 août 2017"),
+    ("2017-70.pdf", "2017-70", "12 octobre 2017"),
+    ("2017-71.pdf", "2017-71", "19 octobre 2017"),
+    ("2017-72.pdf", "2017-72", "26 octobre 2017"),
+]
+
+
+def _archive_link(i, nom, num, publie):
+    return (
+        f'<a class="fr-link fr-link--download" '
+        f'href="/content/download/{i}/{i}/file/{nom}">\n'
+        f"Télécharger {num} publié le {publie} PDF - 5,0 Mb - 05/08/2023</a>\n"
+    )
+
+
+ARCHIVE_2017_HTML = (
+    "<html><body>\n"
+    + "".join(
+        _archive_link(i, nom, num, publie)
+        for i, (nom, num, publie) in enumerate(_ARCHIVE_ROWS, start=1)
+    )
+    + "</body></html>\n"
+)
 
 
 class ParseMonthTest(unittest.TestCase):
@@ -72,6 +107,39 @@ class LabelMonthTest(unittest.TestCase):
         label = "Recueil des actes administratifs 2026-119"
         value = "Recueil-des-actes-administratifs-2026-119-publie-le-03-09-2026"
         self.assertEqual(label_month(label, value), "09")
+
+
+class VendeeArchiveTest(unittest.TestCase):
+    def setUp(self):
+        self.client = VendeeRaaClient(BASE_2026, "2017")
+        self.client._get = lambda url: SimpleNamespace(text=ARCHIVE_2017_HTML)
+
+    def test_url_base_bascule_sur_archives(self):
+        self.assertEqual(
+            self.client.base_url,
+            "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs/"
+            "Consultez-les-archives-1999-2019/2017/2017",
+        )
+
+    def test_url_base_inchangee_annee_recente(self):
+        client = VendeeRaaClient(BASE_2026, "2020")
+        self.assertEqual(client.base_url, BASE_2026)
+
+    def test_documents_for_month_aout(self):
+        # Le span CMS (05/08/2023, re-upload) est contredit par les
+        # libellés → le libellé « publié le » fait foi.
+        result = self.client.documents_for_month("08")
+        self.assertEqual(
+            [name for _, name in result],
+            ["2017-48.pdf", "2017-49.pdf", "2017-50.pdf"],
+        )
+
+    def test_documents_for_month_octobre(self):
+        result = self.client.documents_for_month("10")
+        self.assertEqual(
+            [name for _, name in result],
+            ["2017-70.pdf", "2017-71.pdf", "2017-72.pdf"],
+        )
 
 
 if __name__ == "__main__":

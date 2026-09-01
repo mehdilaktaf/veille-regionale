@@ -17,6 +17,7 @@ from urllib.parse import unquote, urljoin
 from bs4 import BeautifulSoup
 
 from raa_client import (
+    DOWNLOAD_LINK_SELECTOR,
     MONTH_NAMES_FR,
     RaaError,
     RaaHttpClient,
@@ -67,7 +68,7 @@ class MayotteRaaClient(RaaHttpClient):
                     self._get(urljoin(self.base_url, link["href"])).text,
                     "html.parser",
                 )
-                for download in page.select("a.fr-link.fr-link--download"):
+                for download in page.select(DOWNLOAD_LINK_SELECTOR):
                     href = download.get("href")
                     if not href:
                         continue

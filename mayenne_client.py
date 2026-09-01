@@ -3,8 +3,9 @@
 La page annuelle (/Annee-YYYY) présente deux layouts :
 - années récentes : des cartes « Mois YYYY » (h2.fr-card__title) menant
   à une page par mois ;
-- années plus anciennes : les liens de téléchargement directement sur la
-  page annuelle.
+- années plus anciennes (observé 2017, sans pagination) : les liens de
+  téléchargement directement sur la page annuelle, en a.fr-link plain
+  menant à un .pdf (sans --download, sans span CMS).
 
 Sources de date par lien, par ordre de préférence :
 1. le span.fr-link__detail généré par le CMS (présent sur une partie

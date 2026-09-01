@@ -1,8 +1,10 @@
 import unittest
+from types import SimpleNamespace
 
 from bs4 import BeautifulSoup
 
 from maine_et_loire_client import (
+    MaineEtLoireRaaClient,
     find_annual_href,
     filename_month,
     link_day_month,
@@ -122,6 +124,49 @@ class FindAnnualHrefTest(unittest.TestCase):
         self.assertEqual(
             find_annual_href(self.soup, "2025"),
             "/Publications/Recueil-des-Actes-Administratifs/Annee-2025",
+        )
+
+
+BASE_M49 = (
+    "https://www.maine-et-loire.gouv.fr/Publications/"
+    "Recueil-des-Actes-Administratifs"
+)
+
+# Page publications : années récentes + carte « Archives RAA »
+# (les années 2005-2021 y sont sous forme de cartes « Année YYYY »).
+PUBLICATIONS_HTML = """
+<html><body>
+<h2 class="fr-card__title"><a href="/Publications/Recueil-des-Actes-Administratifs/Annee-2026">Année 2026</a></h2>
+<h2 class="fr-card__title"><a href="/Publications/Recueil-des-Actes-Administratifs/Archives-RAA">Archives RAA</a></h2>
+</body></html>
+"""
+
+ARCHIVES_HTML = """
+<html><body>
+<h2 class="fr-card__title"><a href="/Publications/Recueil-des-Actes-Administratifs/Archives-RAA/Annee-2017">Année 2017</a></h2>
+<h2 class="fr-card__title"><a href="/Publications/Recueil-des-Actes-Administratifs/Archives-RAA/Annee-2016">Année 2016</a></h2>
+</body></html>
+"""
+
+
+class MaineEtLoireArchivesTest(unittest.TestCase):
+    def setUp(self):
+        self.client = MaineEtLoireRaaClient(BASE_M49, "2017")
+        pages = {BASE_M49: PUBLICATIONS_HTML, BASE_M49 + "/Archives-RAA": ARCHIVES_HTML}
+        self.client._get = lambda url: SimpleNamespace(text=pages[url])
+
+    def test_annual_page_via_archives(self):
+        self.assertEqual(
+            self.client.find_annual_page(),
+            BASE_M49 + "/Archives-RAA/Annee-2017",
+        )
+
+    def test_annual_page_recente_sur_publications(self):
+        client = MaineEtLoireRaaClient(BASE_M49, "2026")
+        pages = {BASE_M49: PUBLICATIONS_HTML}
+        client._get = lambda url: SimpleNamespace(text=pages[url])
+        self.assertEqual(
+            client.find_annual_page(), BASE_M49 + "/Annee-2026"
         )
 
 

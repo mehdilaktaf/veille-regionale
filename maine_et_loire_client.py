@@ -36,7 +36,13 @@ from raa_client import find_annual_href, link_day_month  # noqa: E402,F401
 
 
 class MaineEtLoireRaaClient(AnnualPageRaaClient):
-    """Client HTTP du RAA du Maine-et-Loire."""
+    """Client HTTP du RAA du Maine-et-Loire.
+
+    Les années antérieures (2005-2021) sont sous la carte « Archives RAA »
+    de la page publications (cartes « Année YYYY ») ; les années 2022+
+    sont directement sur la page publications.
+    """
 
     def __init__(self, base_url, year, timeout=60):
-        super().__init__(base_url, f"Année {year}", timeout)
+        super().__init__(base_url, f"Année {year}", timeout,
+                         archives_needle="Archives")

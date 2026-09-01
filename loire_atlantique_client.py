@@ -16,8 +16,8 @@ from unidecode import unidecode
 from raa_client import (
     MONTH_NAMES_FR,
     RaaHttpClient,
-    du_day_month,
     parse_day_month,
+    relaxed_day_month,
     select_month_documents,
 )
 
@@ -57,7 +57,7 @@ class LoireAtlantiqueRaaClient(RaaHttpClient):
                         urljoin(self.base_url, href),
                         name,
                         parse_day_month(link.get("title") or ""),
-                        du_day_month(link.get_text(strip=True)),
+                        relaxed_day_month(link.get_text(strip=True)),
                     )
                 )
             url = self._next_page_url(soup)

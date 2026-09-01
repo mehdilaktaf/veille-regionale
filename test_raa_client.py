@@ -7,7 +7,16 @@ from types import SimpleNamespace
 
 import requests
 
-from raa_client import RaaError, RaaHttpClient, parse_day_month, parse_month
+from raa_client import (
+    RaaError,
+    RaaHttpClient,
+    _bulk_reupload_inversion,
+    du_day_month,
+    parse_day_month,
+    parse_month,
+    relaxed_day_month,
+    select_month_documents,
+)
 
 
 class ParseDayMonthTest(unittest.TestCase):
@@ -33,6 +42,47 @@ class ParseDayMonthTest(unittest.TestCase):
 
     def test_mois_invalide(self):
         self.assertIsNone(parse_day_month("20/13/2026"))
+
+
+class DuDayMonthTest(unittest.TestCase):
+    def test_slug_sans_accents(self):
+        # nom de fichier d'archive en slug : tirets bas, sans accents
+        self.assertEqual(
+            du_day_month("101-raa_secial_du_29_decembre_2017.pdf"), (29, 12)
+        )
+
+    def test_slug_ordinal(self):
+        self.assertEqual(
+            du_day_month("095-raa_special_du_1er_decembre_2017.pdf"), (1, 12)
+        )
+
+    def test_texte_classique(self):
+        self.assertEqual(du_day_month("RAA du 28 août 2026"), (28, 8))
+
+    def test_sans_du(self):
+        self.assertIsNone(du_day_month("recueil_2026_183.pdf"))
+
+
+class RelaxedDayMonthTest(unittest.TestCase):
+    def test_date_complete(self):
+        self.assertEqual(relaxed_day_month("RAA du 28 août 2026"), (28, 8))
+
+    def test_mois_seul_slug(self):
+        self.assertEqual(
+            relaxed_day_month("raa_mensuel_no_89_-decembe_2018.pdf"), (None, 12)
+        )
+
+    def test_mois_seul_texte(self):
+        self.assertEqual(
+            relaxed_day_month("RAA mensuel n° 89 - Décembre 2018"), (None, 12)
+        )
+
+    def test_mai_ambigu(self):
+        # « mai » doit être reconnu, pas lu dans un autre mot
+        self.assertEqual(relaxed_day_month("recueil mai 2026.pdf"), (None, 5))
+
+    def test_sans_date(self):
+        self.assertIsNone(relaxed_day_month("recueil-53-2026-183.pdf"))
 
 
 class ParseMonthConsistencyTest(unittest.TestCase):
@@ -167,6 +217,83 @@ class DownloadResumeTest(unittest.TestCase):
         ), mock.patch("time.sleep"):
             with self.assertRaises(RaaError):
                 self.client.download("http://x/a.pdf", path)
+
+
+def reupload_docs(n=6):
+    """Simule une page d'archives re-publiée en masse le 17/04/2023 :
+    tous les spans CMS portent cette date, le nom de fichier porte la
+    vraie date de publication (août/septembre 2017)."""
+    docs = []
+    for i in range(n):
+        docs.append(
+            (
+                f"http://x/file/{i}.pdf",
+                f"1{i}-RAA du {10 + i} août 2017.pdf",
+                (17, 4),
+                (10 + i, 8),
+            )
+        )
+    return docs
+
+
+class BulkReuploadTest(unittest.TestCase):
+    def test_signature_detectee(self):
+        self.assertTrue(_bulk_reupload_inversion(reupload_docs()))
+
+    def test_pas_de_signature_dates_dispersionnees(self):
+        docs = [
+            (f"http://x/{i}.pdf", f"RAA du {d} août 2026.pdf", (d, 8), (d, 8))
+            for i, d in enumerate((1, 3, 5, 8, 12, 20), start=1)
+        ]
+        self.assertFalse(_bulk_reupload_inversion(docs))
+
+    def test_pas_de_signature_dates_secondaires_cohérentes(self):
+        # même date CMS partout mais les noms de fichier sont d'accord :
+        # pas de re-upload, c'est un vrai même jour de publication
+        docs = [
+            (f"http://x/{i}.pdf", "RAA du 17 avril 2023.pdf", (17, 4), (17, 4))
+            for i in range(6)
+        ]
+        self.assertFalse(_bulk_reupload_inversion(docs))
+
+    def test_pas_assez_de_dates_cms(self):
+        docs = reupload_docs(2)
+        self.assertFalse(_bulk_reupload_inversion(docs))
+
+    def test_select_utilise_le_secondaire_en_cas_de_reupload(self):
+        result = select_month_documents(reupload_docs(), "08")
+        self.assertEqual(
+            [name for _, name in result],
+            [f"1{i}-RAA du {10 + i} août 2017.pdf" for i in range(6)],
+        )
+
+    def test_reupload_mois_seuls_secondaires(self):
+        # Cas Sarthe 2018 : re-upload le 01/09, noms en slug avec mois seul
+        # (jour perdu) — le mois du nom de fichier fait foi.
+        docs = [
+            (
+                f"http://x/{i}.pdf",
+                f"raa_special_no_{80 + i}_-{mois}_2018.pdf",
+                (1, 9),
+                (None, m),
+            )
+            for i, (mois, m) in enumerate(
+                [("aout", 8), ("septemb", 9), ("decembe", 12)] * 3
+            )
+        ]
+        self.assertTrue(_bulk_reupload_inversion(docs))
+        result = select_month_documents(docs, "08")
+        self.assertEqual(len(result), 3)
+        self.assertTrue(all("aout" in name for _, name in result))
+
+    def test_select_cms_fait_foi_hors_reupload(self):
+        docs = [
+            ("http://x/a.pdf", "RAA du 17 avril 2023.pdf", (17, 4), (17, 4)),
+            ("http://x/b.pdf", "RAA du 2 août 2023.pdf", (2, 8), (2, 8)),
+            ("http://x/c.pdf", "RAA du 9 août 2023.pdf", (9, 8), (9, 8)),
+        ]
+        result = select_month_documents(docs, "08")
+        self.assertEqual([name for _, name in result], ["RAA du 2 août 2023.pdf", "RAA du 9 août 2023.pdf"])
 
 
 if __name__ == "__main__":

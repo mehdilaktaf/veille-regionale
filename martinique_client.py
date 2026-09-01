@@ -2,22 +2,21 @@
 
 La page publications porte une carte « RAA YYYY » (années récentes) ;
 les années antérieures sont sous la carte « Archives » (cartes
-« RAAP YYYY » ou « R.A.A.P YYYY »). La page annuelle n liste pas les
+« RAAP YYYY » ou « R.A.A.P YYYY »). La page annuelle ne liste pas les
 liens directement : elle porte des sous-cartes (RAA + éditions
-spéciales), chacune menant à une page de liens a.fr-link--download,
-chacun portant le span.fr-link__detail généré par le CMS (source de
-vérité pour la date).
+spéciales), chacune menant à une page de liens, chacun portant le
+span.fr-link__detail généré par le CMS (source de vérité pour la date).
 """
 
 from bs4 import BeautifulSoup
 
 from raa_client import (
+    DOWNLOAD_LINK_SELECTOR,
     AnnualPageRaaClient,
     RaaError,
     dedupe_documents,
-    du_day_month,
-    find_annual_href,
     link_day_month,
+    relaxed_day_month,
 )
 from urllib.parse import unquote, urljoin
 
@@ -26,33 +25,13 @@ class MartiniqueRaaClient(AnnualPageRaaClient):
     """Client HTTP du RAA de la Martinique."""
 
     def __init__(self, base_url, year, timeout=60):
-        super().__init__(base_url, f"RAA {year}", timeout)
+        super().__init__(
+            base_url,
+            (f"RAA {year}", f"RAAP {year}", f"R.A.A.P {year}"),
+            timeout,
+            archives_needle="Archives",
+        )
         self.year = year
-
-    def _needles(self):
-        return (f"RAA {self.year}", f"RAAP {self.year}", f"R.A.A.P {self.year}")
-
-    def find_annual_page(self):
-        """Retourne l'URL absolue de la page annuelle (ou None).
-
-        Cherche d'abord sur la page publications, puis sous la carte
-        « Archives » (années antérieures).
-        """
-        soup = BeautifulSoup(self._get(self.base_url).text, "html.parser")
-        for needle in self._needles():
-            href = find_annual_href(soup, needle)
-            if href is not None:
-                return urljoin(self.base_url, href)
-        href = find_annual_href(soup, "Archives")
-        if href is not None:
-            archives_soup = BeautifulSoup(
-                self._get(urljoin(self.base_url, href)).text, "html.parser"
-            )
-            for needle in self._needles():
-                href = find_annual_href(archives_soup, needle)
-                if href is not None:
-                    return urljoin(self.base_url, href)
-        return None
 
     def list_documents(self):
         """Retourne les documents de l'année : (url, nom, jour_mois_cms,
@@ -78,7 +57,7 @@ class MartiniqueRaaClient(AnnualPageRaaClient):
             sub_soup = BeautifulSoup(
                 self._get(urljoin(self.base_url, href)).text, "html.parser"
             )
-            for link in sub_soup.select("a.fr-link.fr-link--download"):
+            for link in sub_soup.select(DOWNLOAD_LINK_SELECTOR):
                 link_href = link.get("href")
                 if not link_href:
                     continue
@@ -87,7 +66,7 @@ class MartiniqueRaaClient(AnnualPageRaaClient):
                         urljoin(self.base_url, link_href),
                         unquote(link_href.split("/")[-1]),
                         link_day_month(link),
-                        du_day_month(link.get_text(strip=True)),
+                        relaxed_day_month(link.get_text(strip=True)),
                     )
                 )
         return dedupe_documents(documents)
