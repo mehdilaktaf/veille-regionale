@@ -23,6 +23,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 | Bas-Rhin | bas-rhin.gouv.fr | section sous « Publications officielles » : cartes « RAA ANNEE YYYY » (majuscules sans accent, 2026→2017) → page annuelle : **1 select par mois**, tous « Liste-liste-docs » → POST → panneau (pattern Marne/Vendée) | span CMS du panneau POST (100 %) ; mois du dossier mensuel de la value (« Media/Files/22.-RAA/2026/Fevrier/... ») en pré-filtre, libellé « RAA N° X du D mois YYYY » en contrôle | 1 (2017 à confirmer) | 2017 (carte, à confirmer) | ✗ non testé | — |
 | Haut-Rhin | haut-rhin.gouv.fr | cartes d'années à **texte exact « YYYY »** (2026→**1994**, archive très profonde) → page annuelle : cartes docs paginées par 10, **liens directs vers le PDF** (pattern Aube/LA) | attribut `title` de la carte (CMS, « format pdf - 1,02 Mb - 31/08/2026 ») ; texte « Recueil n°100 du 31 août 2026 » en contrôle | 1 (à confirmer sur 1994-2025) | **1994** (cartes) | ✗ non testé | — |
 | Territoire de Belfort | territoire-de-belfort.gouv.fr | section : liens `a.fr-link` plain « Année YYYY » (2026→2015 + 2010, 2011-2014 absents, **coquille : 2021 → page 2022**) → page annuelle de liens directs (sans pagination) | span CMS (100 %) ; nom « recueil-90-2026-014- publié le 02-02-2026.pdf » en contrôle (ancré « publié le », pas « du ») | 1 (slugs longs 2023+ / courts 2015-2022) | 2010 (lien, à confirmer) | ✗ non testé | — |
+| Calvados | calvados.gouv.fr | 2 niveaux : section → carte « RAA départemental » (et « régional ») → cartes années texte exact « YYYY » (2026→2018) + carte « Archives » → page annuelle de liens directs (≈ 350/an, sans pagination) | span CMS (100 %) ; noms de fichier sans date (« recueil-14-2026-369-... ») | 1 (2018 à confirmer ; « Archives » au-delà) | 2018 (cartes, à confirmer) | ✗ non testé | — |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
 | Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
@@ -126,6 +127,17 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   CMS/nom sur d'autres mois (n°009 nom 21/01 CMS juil., n°095 nom 08/08
   CMS 07, n°126 nom 27/08 CMS 09) — le mois CMS fait foi (règle du
   projet) ; à creuser au backfill (re-postage probable). **Grand Est 10/10.**
+
+### Phase Normandie (mode test 3 fichiers, mois 2026-02)
+- **Calvados 2026-02** ✓ : 3/34 docs (spéciaux n°092-094), ≈6 req (1 sonde +
+  1 GET page départementale + 1 GET annuelle + 3 dl). Navigation à 2 niveaux :
+  la section porte les cartes « départemental »/« régional » ; la page
+  départementale les cartes années texte exact « YYYY » (2026→2018) + carte
+  « Archives ». Page annuelle : 350 liens directs sans pagination, span CMS
+  100 %, noms sans date (« recueil-14-2026-369-recueil-des-actes-
+  administratifs.pdf »). Un AP non-RAA (`202607_AP_abrogation_...pdf`) est
+  posté sur la page annuelle : inclus seulement si sa date CMS tombe dans le
+  mois cible (règle M49).
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.
