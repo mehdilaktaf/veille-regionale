@@ -20,7 +20,7 @@ déjà testés en 2026-08 avant la bascule.
 Règle WAF : 1 dépt à la fois, espacement, arrêt total si blocage (pas de
 polling), ~4-5 dépts par session.
 
-## En cours : campagne Normandie (3/5)
+## En cours : campagne Normandie (4/5)
 Même pipeline que le Grand Est : découverte (2-4 GET) → client (sous-classe
 existante) → clients.py + tests → `run.py <Dépt> 2026 02 raa_pdfs
 --max-docs 3 --max-wait 1800` (repli 2026-03 si février vide) → CATALOGUE.md +
@@ -28,7 +28,7 @@ AGENTS.md + commit par dépt.
 - [x] Calvados (14) — 2026-02 ✓ 3/34 (2 niveaux : carte « départemental » → cartes années, page annuelle liens directs ≈ 350, span CMS 100 %)
 - [x] Eure (27) — 2026-02 ✓ 3/29 (cartes « RAA YYYY » → cartes docs paginées → page doc span CMS ; typos de mois « oaût »/« febvrier » au balayeur)
 - [x] Manche (50) — 2026-02 ✓ 3/18 (cartes mois « N. <Mois> » + carte « Délégations » au balayeur, liens plain sans span, la carte mois faisant foi — mensuel M publié le M+1)
-- [ ] Orne (61)
+- [x] Orne (61) — 2026-02 ✓ 3/26 (3 niveaux via menu latéral, cartes h2 à href cassé, classes des liens corrompues par le CMS → `a[href$='.pdf']`, span intact, pas de mensuel)
 - [ ] Seine-Maritime (76)
 
 ## Parking : années anciennes (reprendre après le Grand Est)

@@ -26,6 +26,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 | Calvados | calvados.gouv.fr | 2 niveaux : section → carte « RAA départemental » (et « régional ») → cartes années texte exact « YYYY » (2026→2018) + carte « Archives » → page annuelle de liens directs (≈ 350/an, sans pagination) | span CMS (100 %) ; noms de fichier sans date (« recueil-14-2026-369-... ») | 1 (2018 à confirmer ; « Archives » au-delà) | 2018 (cartes, à confirmer) | ✗ non testé | — |
 | Eure | eure.gouv.fr | cartes « RAA YYYY » (2026→2015, pas d'archives visible) → page annuelle : cartes docs paginées par 10 (≈ 25 pages, « Recueil spécial N°27-2026-261 du 01 septembre 2026 ») → page doc (1 lien + span) | span CMS (100 %) ; mois de la carte (ancré « du ») en pré-filtre — typos du site (« oaût », « febvrier ») → cartes visitées au balayeur | 1 (2015 à confirmer) | 2015 (cartes, à confirmer) | ✗ non testé | ✓ test 3/29 OK, full en attente |
 | Manche | manche.gouv.fr | cartes années texte exact « YYYY » (2026→2016, coquilles de slug 2021→/20212, 2020→/20202) → page annuelle : cartes mois « N. <Mois> » paginées par 10 (préfixe numérique non fiable) + cartes non-mois (« 2. Délégations de signatures ») → page de carte : liens `a.fr-link` plain (sans span en 2026), date de publication dans le texte | **la carte mois fait foi** (le mensuel du mois M est publié le M+1 — la date de publication ne fait pas foi) ; cartes non-mois : date de publication (balayeur) | 1 (2016 à confirmer) | 2016 (cartes, à confirmer) | ✗ non testé | ✓ test 3/18 OK, full en attente |
+| Orne | orne.gouv.fr | section → carte « (RAA) » → années (2026→2017) dans le **menu latéral** `a.fr-sidemenu__link` (les cartes h2 de la page RAA ont un href cassé vers la page elle-même) → page annuelle : cartes mois à nom seul (Janvier…Décembre) + carte thématique « Spéciaux du mois de juillet » → page de carte : liens aux **classes corrompues par le CMS** (`a[href$='.pdf']`), span intact | span CMS (100 %, annexes comprises) ; nom « du <jour> D <mois> YYYY » en contrôle (double espaces, « du <mois> » sans jour, annexes sans date) | 1 (2017 à confirmer) | 2017 (menu, à confirmer) | ✗ non testé | ✓ test 3/26 OK, full en attente |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
 | Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
@@ -167,6 +168,25 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   mensuel de février → 05/03) — classé en début du mois de la carte avec
   warning. Cartes non-mois balayées (publication faisant foi), dédoublonnage
   par nom (n°038 présent sur les deux).
+- **Orne 2026-02** ✓ : 3/26 docs (n°20, n°21 + annexe « Récapitulatif des
+  candidatures », 596 pages fusionnées), ≈ 8 req (1 sonde + 2 GET navigation
+  + 1 GET annuelle + 1 GET carte + 3 dl). Trois niveaux : section → carte
+  « (RAA) » → années dans le **menu latéral** `a.fr-sidemenu__link` (« Le
+  Recueil des Actes Administratifs 2026 » majuscules, autres minuscules) —
+  les cartes h2 de la page RAA portent le même texte mais un **href cassé
+  (renvoi vers la page elle-même)** : navigation par le menu latéral. Page
+  annuelle : **cartes mois à nom seul** (Janvier…Décembre, sans pagination)
+  + carte « Spéciaux du mois de juillet » (nom de mois dans le titre →
+  traitée comme carte de juillet, dédoublonnage par nom). Pages de carte :
+  ancres aux **classes corrompues par le CMS** (« <a
+  fr-link--download="" id='class="fr-link'… » — le sélecteur
+  `a.fr-link--download` ne matche pas → `a[href$='.pdf']`), le
+  span.fr-link__detail est en revanche **intact (100 %, annexes sans date
+  comprise)** et fait foi. Noms datés « du <jour de la semaine> D <mois>
+  YYYY » (double espaces, « du <mois> » sans jour) en contrôle. Pas de
+  mensuel : le « fusionné » = spécialités + annexes du mois. Anomalies
+  numérotation (n°15 avant n°14, n°17 « du 24 » posté le 25/02) : le CMS
+  fait foi.
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.
