@@ -16,6 +16,7 @@ from bas_rhin_client import BasRhinRaaClient
 from haut_rhin_client import HautRhinRaaClient
 from territoire_de_belfort_client import TerritoireDeBelfortRaaClient
 from calvados_client import CalvadosRaaClient
+from eure_client import EureRaaClient
 from vendee_client import VendeeRaaClient
 from maine_et_loire_client import MaineEtLoireRaaClient
 from sarthe_client import SartheRaaClient
@@ -41,6 +42,7 @@ DEPARTMENT_URLS = {
     "Haut-Rhin": "https://www.haut-rhin.gouv.fr/Publications/Recueil-des-actes-administratifs",
     "Territoire de Belfort": "https://www.territoire-de-belfort.gouv.fr/Publications/Le-recueil-des-actes-administratifs",
     "Calvados": "https://www.calvados.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueil-des-actes-administratifs-departemental",
+    "Eure": "https://www.eure.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA",
     "Maine-et-Loire": "https://www.maine-et-loire.gouv.fr/Publications/Recueil-des-Actes-Administratifs",
     "Vendée": "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueils-des-Actes-Administratifs-{year}",
     "Loire-Atlantique": "https://www.loire-atlantique.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA-en-Loire-Atlantique/{year}/",
@@ -88,6 +90,8 @@ def build_client(department, year):
         return TerritoireDeBelfortRaaClient(url, year)
     if department == "Calvados":
         return CalvadosRaaClient(url, year)
+    if department == "Eure":
+        return EureRaaClient(url, year)
     if department == "Vendée":
         return VendeeRaaClient(url, year)
     if department == "Maine-et-Loire":
