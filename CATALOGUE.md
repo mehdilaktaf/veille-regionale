@@ -25,6 +25,7 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
 | Territoire de Belfort | territoire-de-belfort.gouv.fr | section : liens `a.fr-link` plain « Année YYYY » (2026→2015 + 2010, 2011-2014 absents, **coquille : 2021 → page 2022**) → page annuelle de liens directs (sans pagination) | span CMS (100 %) ; nom « recueil-90-2026-014- publié le 02-02-2026.pdf » en contrôle (ancré « publié le », pas « du ») | 1 (slugs longs 2023+ / courts 2015-2022) | 2010 (lien, à confirmer) | ✗ non testé | — |
 | Calvados | calvados.gouv.fr | 2 niveaux : section → carte « RAA départemental » (et « régional ») → cartes années texte exact « YYYY » (2026→2018) + carte « Archives » → page annuelle de liens directs (≈ 350/an, sans pagination) | span CMS (100 %) ; noms de fichier sans date (« recueil-14-2026-369-... ») | 1 (2018 à confirmer ; « Archives » au-delà) | 2018 (cartes, à confirmer) | ✗ non testé | — |
 | Eure | eure.gouv.fr | cartes « RAA YYYY » (2026→2015, pas d'archives visible) → page annuelle : cartes docs paginées par 10 (≈ 25 pages, « Recueil spécial N°27-2026-261 du 01 septembre 2026 ») → page doc (1 lien + span) | span CMS (100 %) ; mois de la carte (ancré « du ») en pré-filtre — typos du site (« oaût », « febvrier ») → cartes visitées au balayeur | 1 (2015 à confirmer) | 2015 (cartes, à confirmer) | ✗ non testé | ✓ test 3/29 OK, full en attente |
+| Manche | manche.gouv.fr | cartes années texte exact « YYYY » (2026→2016, coquilles de slug 2021→/20212, 2020→/20202) → page annuelle : cartes mois « N. <Mois> » paginées par 10 (préfixe numérique non fiable) + cartes non-mois (« 2. Délégations de signatures ») → page de carte : liens `a.fr-link` plain (sans span en 2026), date de publication dans le texte | **la carte mois fait foi** (le mensuel du mois M est publié le M+1 — la date de publication ne fait pas foi) ; cartes non-mois : date de publication (balayeur) | 1 (2016 à confirmer) | 2016 (cartes, à confirmer) | ✗ non testé | ✓ test 3/18 OK, full en attente |
 | Maine-et-Loire | maine-et-loire.gouv.fr | cartes « Année YYYY » → page annuelle de liens | span CMS (années récentes) ; **noms de fichier** (archives : re-upload) | **2** : 2022+ page publications / 2005-2021 carte « Archives RAA » | **2005** | ✓ 2017-08 (3/9) | ✓ full run |
 | Vendée | vendee.gouv.fr | 2020+ : menu `select#Liste-liste-docs` + POST ; 1999-2019 : page archives à liens directs | 2020+ : span CMS du panneau ; 1999-2019 : libellé « publié le » (span = re-upload) | **2** : 2020+ menu/POST / 1999-2019 « Consultez-les-archives-1999-2019/YYYY/YYYY » (150 liens/an) | **1999** | ✓ 2017-08 (3/10) | ✓ full run |
 | Loire-Atlantique | loire-atlantique.gouv.fr | page mensuelle `/YYYY/<slug>/`, cartes paginées par 10 | attribut `title` de la carte (CMS) | 1 (2017 même flow) | 2017 (testé) | ✓ 2017-08 (3/12) | ✓ full run |
@@ -151,6 +152,21 @@ Légende statut : ✓ OK · ⚠ partiel/anomalie · ✗ non testé · en attente
   Phase de liste coûteuse (1 GET section + ≈ 25 pages + 1 GET doc par carte du
   mois + balayeur) → cache `.raa_list/` ; relance 04/09 bon marché
   (1 sonde + 1 dl n°064 + fusion partielle, reprise des 2 PDF du 02/09).
+- **Manche 2026-02** ✓ : 3/18 docs (spéciaux n°044-046, 90 pages fusionnées),
+  ≈ 8 req (1 sonde + 1 GET section + 2 GET annuelle + 1 GET carte mois +
+  1 GET carte « Délégations » + 3 dl) — run bon marché (pré-filtre sur les
+  cartes). La page annuelle organise en **cartes mois** (« 3. Février »,
+  paginées par 10 — le préfixe numérique n'est pas fiable : « 10. » manquant,
+  « 11. Septembre » ; matching par le nom de mois) + cartes non-mois
+  (« 2. Délégations de signatures du Préfet de la Manche ») qui portent des
+  RAA **absents des cartes mois** (le n°013 du 12/01 n'existe que là).
+  Page de carte : liens `a.fr-link` plain (**sans span** en 2026), date de
+  publication dans le texte (« PDF - 0,11 Mb - 05/02/2026 »), noms sans jour.
+  **La carte mois fait foi** (dérogation à la règle CMS) : le « RAA mensuel
+  <Mois> » du mois M est publié le M+1 (mensuel de janvier → 05/02,
+  mensuel de février → 05/03) — classé en début du mois de la carte avec
+  warning. Cartes non-mois balayées (publication faisant foi), dédoublonnage
+  par nom (n°038 présent sur les deux).
 
 ### Phase 2026-08 (mode test 3 fichiers)
 - **Réunion** ✓ : 3/75 actes (les plus récents), 16 repris, cache créé, ~17 req.
