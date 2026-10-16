@@ -245,7 +245,10 @@ if "map_version" not in st.session_state:
     st.session_state.map_version = 0
 
 def on_map_select():
-    points = st.session_state[f"map_{st.session_state.map_version}"].selection.points
+    key = f"map_{st.session_state.map_version}"
+    if key not in st.session_state:
+        return
+    points = st.session_state[key].selection.points
     clicked = [all_depts[p["point_index"]] for p in points if p["curve_number"] == 0]
     if clicked:
         current = list(st.session_state.dept_selector)
