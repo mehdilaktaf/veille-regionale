@@ -27,8 +27,8 @@ import requests
 from PyPDF2 import PdfMerger
 from unidecode import unidecode
 
-from clients import DEPARTMENT_URLS, build_client
-from raa_client import MONTH_NAMES_FR, RaaError
+from src.clients.clients import DEPARTMENT_URLS, build_client
+from src.raa_client import MONTH_NAMES_FR, RaaError
 
 # En-têtes révélateurs du WAF/CDN qui protège le site.
 _WAF_HEADERS = (
@@ -71,29 +71,29 @@ def resolve_department(name):
     )
 
 
-def wait_until_reachable(client, max_wait, interval=60):
+def wait_until_reachable(client, max_wait, interval=60, output_func=print):
     """Attend que le site devienne joignable (blocage WAF) sans insister :
     1 GET « sonde » toutes les ``interval`` secondes, jusqu'à ``max_wait``.
     Retourne True si le site répond, False si le délai d'attente est dépassé."""
     if max_wait <= 0:
         return True
     deadline = time.monotonic() + max_wait
-    print(
+    output_func(
         f"Site bloqué ? Attente du déblocage "
         f"(1 sonde GET / {interval:g} s, max {max_wait:g} s)…"
     )
     while True:
         try:
             client.session.get(client.base_url, timeout=20)
-            print("Site joignable : lancement du run.")
+            output_func("Site joignable : lancement du run.")
             return True
         except requests.RequestException as exc:
             if time.monotonic() + interval > deadline:
-                print(
+                output_func(
                     f"Site encore bloqué après {max_wait:g} s ({type(exc).__name__})."
                 )
                 return False
-            print(f"Bloqué ({type(exc).__name__}) — nouvelle sonde dans {interval:g} s.")
+            output_func(f"Bloqué ({type(exc).__name__}) — nouvelle sonde dans {interval:g} s.")
             time.sleep(interval)
 
 
@@ -162,32 +162,32 @@ def merged_filename(month_name, year, department, partial=False):
     return f"RAA_{kind}_{month_name}_{year}_{department}.pdf"
 
 
-def load_or_list(client, month, cache_file, refresh=False):
+def load_or_list(client, month, cache_file, refresh=False, output_func=print):
     """Retourne la liste des PDF du mois, depuis le cache s'il est présent,
     sinon en interrogeant le site (et en écrivant le cache)."""
     if not refresh and os.path.isfile(cache_file):
         with open(cache_file, encoding="utf-8") as f:
             pdf_links = [tuple(item) for item in json.load(f)]
-        print(f"Liste en cache ({len(pdf_links)} docs) : {cache_file}")
+        output_func(f"Liste en cache ({len(pdf_links)} docs) : {cache_file}")
         return pdf_links
     pdf_links = client.documents_for_month(month)
     os.makedirs(os.path.dirname(cache_file), exist_ok=True)
     with open(cache_file, "w", encoding="utf-8") as f:
         json.dump([list(item) for item in pdf_links], f, ensure_ascii=False)
-    print(f"Liste actualisée puis mise en cache ({len(pdf_links)} docs).")
+    output_func(f"Liste actualisée puis mise en cache ({len(pdf_links)} docs).")
     return pdf_links
 
 
 def run(
     department, year, month, dest_folder,
     request_delay=2.0, max_wait=0, wait_interval=60, refresh=False,
-    max_docs=0,
+    max_docs=0, output_func=print,
 ):
     """Récupère puis fusionne le mois : retourne le chemin du PDF fusionné.
-
+    
     Si un téléchargement échoue (blocage WAF), les PDF déjà complets sont
     conservés : relancer la même commande reprend où s'est arrêté le run.
-
+    
     Avec ``max_docs`` (mode test), seuls les N documents les plus récents
     du mois sont récupérés et la fusion partielle porte le nom
     « RAA_fusionne_partiel_... ».
@@ -196,14 +196,14 @@ def run(
     if request_delay is not None:
         client.request_delay = request_delay
 
-    if not wait_until_reachable(client, max_wait, wait_interval):
+    if not wait_until_reachable(client, max_wait, wait_interval, output_func=output_func):
         raise SystemExit(
             "Blocage WAF non levé avant la fin de l'attente ; relancer plus tard "
             "(les PDF déjà téléchargés sont repris)."
         )
 
     all_links = load_or_list(
-        client, month, cache_path(dest_folder, department, year, month), refresh
+        client, month, cache_path(dest_folder, department, year, month), refresh, output_func=output_func
     )
     pdf_links = limit_to_recent(all_links, max_docs)
     if not pdf_links:
@@ -211,7 +211,7 @@ def run(
             f"Aucun PDF trouvé pour {department} {month}/{year}."
         )
     if max_docs and len(pdf_links) < len(all_links):
-        print(
+        output_func(
             f"Mode test : {len(pdf_links)} derniers document(s) sur "
             f"{len(all_links)} (fusion partielle)."
         )
@@ -231,7 +231,7 @@ def run(
         return os.path.join(pdf_dir, local_name(pdf_name))
 
     done = [n for _, n in pdf_links if client._is_complete_pdf(local_path(n))]
-    print(
+    output_func(
         f"{department} {month_name}/{year} : {len(pdf_links)} document(s), "
         f"{len(done)} déjà téléchargé(s) (reprise)."
     )
@@ -250,7 +250,7 @@ def run(
         merger.append(local_path(pdf_name))
     merger.write(merged)
     merger.close()
-    print(f"Fusion écrite : {merged}")
+    output_func(f"Fusion écrite : {merged}")
     return merged
 
 

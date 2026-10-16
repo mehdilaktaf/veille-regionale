@@ -4,6 +4,7 @@ Ce projet permet d'automatiser la veille sur les Recueils des Actes Administrati
 
 ## 🚀 Fonctionnalités
 
+- **Interface Streamlit (Nouvel)** : Carte interactive pour sélectionner les départements et lancer des imports/fusions en masse.
 - **Automatisation du Scraping** : Récupération automatique des PDFs de RAA depuis les portails gouvernementaux (Maine-et-Loire, Vendée, Loire-Atlantique, Mayenne, Sarthe).
 - **Fusion de Documents** : Fusion des PDFs téléchargés pour un mois et un département donnés en un seul fichier.
 - **Analyse Intelligente** : Extraction du texte en **gras** des PDFs pour identifier des arrêtés administratifs basés sur une liste de mots-clés (ex: ZFE, sécheresse, bruit, etc.).
@@ -24,8 +25,14 @@ Ce projet permet d'automatiser la veille sur les Recueils des Actes Administrati
 
 ## 💻 Utilisation
 
-### 1. Application Graphique (GUI)
-L'interface principale permet de sélectionner le département, l'année et le mois, puis de lancer le processus de téléchargement et de fusion.
+### 1. Application Streamlit (Interactive)
+L'interface web permet de sélectionner des départements sur une carte et de lancer des imports ou des fusions de documents.
+```bash
+.venv/bin/python -m streamlit run streamlit_app.py
+```
+
+### 2. Application Graphique (GUI)
+L'interface classique permet de sélectionner un département, une année et un mois.
 ```bash
 python app.py
 ```
@@ -48,8 +55,14 @@ python fetch_and_merge_pdf.py
 
 ## 📁 Structure du Projet
 
-- `app.py` : Point d'entrée principal (Interface GUI).
-- `fetch_and_merge_pdf.py` : Logique de scraping et de fusion des PDFs.
+- `streamlit_app.py` : Interface interactive avec carte (Streamlit).
+- `run.py` : CLI headless pour récupérer et fusionner les RAA d'un département/mois.
+- `app.py` : Point d'entrée principal (Interface GUI Tkinter).
 - `analyse.py` : Logique d'extraction et de recherche de mots-clés.
+- `src/` : Cœur de l'application.
+    - `raa_client.py` : Base partagée des clients HTTP.
+    - `raa_core.py` : Logique métier commune.
+    - `clients/` : Implémentations spécifiques par département.
+- `tests/` : Suite de tests unitaires et d'intégration.
 - `requirements.txt` : Liste des dépendances Python.
 - `raa_pdfs/` : Dossier de stockage temporaire pour les PDFs téléchargés.

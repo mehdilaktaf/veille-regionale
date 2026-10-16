@@ -7,7 +7,8 @@ from tkinter import ttk
 from PyPDF2 import PdfMerger
 from datetime import datetime
 from unidecode import unidecode
-from clients import DEPARTMENT_URLS, build_client
+from src.clients.clients import DEPARTMENT_URLS, build_client
+from src.raa_core import scrape_and_merge as core_scrape_and_merge
 
 logging.basicConfig(filename='app.log', level=logging.INFO)
 
@@ -121,62 +122,27 @@ class VeilleRegionaleApp:
         try:
             department = self.dept_var.get()
             year = self.year_var.get()
-            url = self.department_urls[department].format(year=year)
             dest_folder = self.dest_folder_var.get()
             month = self.months[self.month_var.get()]
-            self.scrape_and_merge(url, dest_folder, month)
+            
+            def progress_callback(done, total, message):
+                self.progress['value'] = (done / total * 100) if total > 0 else 0
+                self.progress_label.config(text=message)
+                self.root.update_idletasks()
+
+            core_scrape_and_merge(
+                department=department,
+                year=year,
+                month=month,
+                dest_folder=dest_folder,
+                progress_cb=progress_callback
+            )
             self.progress_label.config(text="Traitement terminé avec succès.")
         except Exception as e:
             self.progress_label.config(text=f"Erreur : {e}")
             messagebox.showerror("Erreur", str(e))
         
-    def scrape_and_merge(self, url, dest_folder, month):
-        # Récupération des liens : un client HTTP par département, aucun
-        # navigateur nécessaire.
-        year = self.year_var.get()
-        department = self.dept_var.get()
-        self.http_client = build_client(department, year)
-
-        pdf_links = self.http_client.documents_for_month(month)
-
-        if not pdf_links:
-            if self.month_names[month]=="août":
-                raise Exception(f"Aucun PDF trouvé pour le mois d'{self.month_names[month]}.")
-            else:
-                raise Exception(f"Aucun PDF trouvé pour le mois de {self.month_names[month]}.")
-
-        # Initialiser la barre de progression
-        total_pdfs = len(pdf_links)
-        self.progress['maximum'] = total_pdfs
-
-        # Dossiers de destination : <dest>/<département>/<année>/<mois>/
-        dept_dir = os.path.join(dest_folder, unidecode(department).lower())
-        month_name = self.month_names[month]
-        pdf_dir = os.path.join(dept_dir, year, month_name)
-        os.makedirs(pdf_dir, exist_ok=True)
-
-        merger = PdfMerger()
-        for index, (pdf_url, pdf_name) in enumerate(pdf_links):
-            # Télécharger et ajouter chaque PDF
-            name = pdf_name.split("/")[-1]
-            if not name.endswith(".pdf"):
-                name += ".pdf"
-            pdf_path = os.path.join(pdf_dir, name)
-            self.http_client.download(pdf_url, pdf_path)
-            merger.append(pdf_path)
-
-            # Mettre à jour la barre de progression
-            self.progress['value'] = index + 1
-            self.root.update_idletasks()
-
-        # Écriture du fichier PDF fusionné et fermeture du merger
-        merged_pdf_path = os.path.join(
-            dept_dir, f"RAA_fusionne_{month_name}_{year}_{department}.pdf"
-        )
-        merger.write(merged_pdf_path)
-        merger.close()
-        
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = VeilleRegionaleApp(root)
-    root.mainloop()
+    if __name__ == "__main__":
+        root = tk.Tk()
+        app = VeilleRegionaleApp(root)
+        root.mainloop()
