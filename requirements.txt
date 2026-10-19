@@ -8,6 +8,6 @@ pyinstaller>=6.15.0  # Pour convertir le script en application exécutable (>=6.
 customtkinter==5.1.3
 pdfplumber # For text extraction in analyse.py
 openpyxl # For Excel export in analyse.py
-streamlit
+streamlit>=1.35.0
 plotly
 pypdf
