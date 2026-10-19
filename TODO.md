@@ -46,14 +46,18 @@ Pipeline (PoC Optimisé) : découverte $\rightarrow$ client ciblé (1 mois) $\ri
       - [x] Seine-et-Marne
       - [x] Seine-Saint-Denis
       - [x] Val-de-Marne
-      - [ ] Val-d'Oise (Client OK, WAF débloqué — en attente test 3 docs)
+      - [x] Val-d'Oise (Client OK, test 3 docs OK)
       - [x] Yvelines
 - [ ] Nouvelle-Aquitaine
       - [x] Gironde, Pyrénées-Atlantiques, Landes, Dordogne, Lot-et-Garonne, Creuse, Haute-Vienne, Corrèze, Charente, Deux-Sèvres
-      - [ ] Charente-Maritime (Bloqué WAF)
+      - [ ] Charente-Maritime (Bloqué WAF - à retester)
 - [ ] Occitanie
-      - [x] Ariège
-      - [ ] Aveyron, Lozère, Gard, Hérault, Haute-Garonne, Gers, Lot, Aude, Pyrénées-Orientales
+       - [x] Ariège
+       - [x] Aveyron
+       - [x] Lozère
+       - [x] Gard
+       - [x] Hérault
+       - [ ] Haute-Garonne, Gers, Lot, Aude, Pyrénées-Orientales
 - [ ] Provence-Alpes-Côte d'Azur
       - [ ] Alpes-Maritimes, Hautes-Alpes, Alpes-de-Haute-Provence, Var, Vaucluse
 
