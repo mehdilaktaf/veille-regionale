@@ -24,7 +24,7 @@ class CharenteMaritimeRaaClient(RaaHttpClient):
 
     def __init__(self, base_url, year, timeout=60):
         super().__init__(base_url, timeout)
-        self.year = year
+        self.year = int(year)
         self.annual_page_url = None
 
     def find_annual_page(self):
